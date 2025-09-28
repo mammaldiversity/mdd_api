@@ -194,7 +194,7 @@ impl MddData {
 
     /// Parse csv data to json.
     /// Return in String json format.
-    pub fn from_csv_to_json(&self, csv_data: &str) -> Vec<MddData> {
+    pub fn from_csv(&self, csv_data: &str) -> Vec<MddData> {
         let mut rdr = csv::Reader::from_reader(csv_data.as_bytes());
         let mut records = Vec::new();
         for result in rdr.deserialize() {
@@ -220,7 +220,7 @@ mod tests {
         let csv_data = Path::new("tests/data/test_data.csv");
         let csv_data = std::fs::read_to_string(csv_data).unwrap();
         let parser = MddData::new();
-        let json_data = parser.from_csv_to_json(&csv_data);
+        let json_data = parser.from_csv(&csv_data);
         // let data = AllMddData::from_json(&json_data);
         assert_eq!(json_data.len(), 112);
     }

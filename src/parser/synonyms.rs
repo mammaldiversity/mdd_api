@@ -121,7 +121,7 @@ impl SynonymData {
         }
     }
 
-    pub fn from_csv_to_json(&self, csv_data: &str) -> Vec<SynonymData> {
+    pub fn from_csv(&self, csv_data: &str) -> Vec<SynonymData> {
         let data = self.clean_colnames(csv_data);
         let mut rdr = csv::Reader::from_reader(data.as_slice());
         let mut records = Vec::new();
@@ -180,7 +180,7 @@ mod tests {
         let path = "tests/data/syndata.csv";
         let data = std::fs::read_to_string(path).unwrap();
         let synonym_data = SynonymData::new();
-        let records = synonym_data.from_csv_to_json(&data);
+        let records = synonym_data.from_csv(&data);
         assert!(!records.is_empty());
     }
 }

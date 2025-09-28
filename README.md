@@ -31,9 +31,9 @@ into `ReleaseToml` / `ReleaseMetadata` and can be used to drive versioned output
 ### Typical Workflow
 
 1. Read the MDD species CSV and parse into `Vec<MddData>` using
-   `MddData::from_csv_to_json` (despite the name it returns typed structs).
+   `MddData::from_csv` (returns typed structs).
 2. Read the synonym CSV and parse into `Vec<SynonymData>` via
-   `SynonymData::from_csv_to_json`.
+   `SynonymData::from_csv`.
 3. (Optional) Aggregate into a `ReleasedMddData` with
    `ReleasedMddData::from_parser` providing the desired version + release date.
 4. Serialize to JSON or gzip using standard tooling.

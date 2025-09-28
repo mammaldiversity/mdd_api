@@ -266,12 +266,12 @@ impl<'a> JsonParser<'a> {
 
         println!("Parsing MDD data from: {:?}", self.input_path);
         let parser = MddData::new();
-        let mut mdd_data = parser.from_csv_to_json(&mdd_data);
+        let mut mdd_data = parser.from_csv(&mdd_data);
         println!("Found MDD data records: {}", mdd_data.len());
 
         println!("Parsing synonym data from: {:?}", self.synonym_path);
         let synonyms = SynonymData::new();
-        let mut synonym_data = synonyms.from_csv_to_json(&syn_data);
+        let mut synonym_data = synonyms.from_csv(&syn_data);
         println!("Found synonym data records: {}", synonym_data.len());
 
         if synonym_data.is_empty() {

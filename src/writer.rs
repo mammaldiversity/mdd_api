@@ -1,3 +1,19 @@
+//! Output helpers for serializing parsed MDD data into JSON or CSV.
+//!
+//! The writers in this module accept JSON strings containing either an
+//! aggregated `AllMddData` structure (species + synonym bundle) or a vector of
+//! `MddData` rows and persist them to disk. Optional CSV output mode performs a
+//! simple transformation to replace the `taxonOrder` JSON field name back to
+//! `order` for interoperability with tools expecting the original column name.
+//!
+//! Design notes:
+//! * Conversion routines keep memory usage modest by streaming writes via
+//!   `csv::Writer` where applicable.
+//! * Gzipped JSON (`*.json.gz`) can be ingested and converted using
+//!   `AllMddWriter::write_from_gz`.
+//! * Both writers expose a `to_csv` flag; when false, raw JSON is written
+//!   unchanged.
+
 use std::{
     fs,
     io::{BufReader, Read},
@@ -11,6 +27,7 @@ use crate::parser::{mdd::MddData, AllMddData};
 const CSV_EXTENSION: &str = "csv";
 const JSON_EXTENSION: &str = "json";
 
+/// Common behavior for writer implementations.
 trait Writer {
     fn write(&self, json_data: &str) -> Result<PathBuf, Box<dyn std::error::Error>>;
 
@@ -19,7 +36,7 @@ trait Writer {
     fn get_extension(&self) -> &str;
 }
 
-/// Write data structure for MDD and synonym data.
+/// Write data structure for full MDD + synonym bundle (`AllMddData`).
 pub struct AllMddWriter<'a> {
     pub output_dir: &'a Path,
     pub output_filename: &'a str,
@@ -57,6 +74,7 @@ impl Writer for AllMddWriter<'_> {
 }
 
 impl<'a> AllMddWriter<'a> {
+    /// Create a new writer.
     pub fn new(output_dir: &'a Path, output_filename: &'a str, to_csv: bool) -> Self {
         AllMddWriter {
             output_dir,
@@ -65,8 +83,8 @@ impl<'a> AllMddWriter<'a> {
         }
     }
 
-    /// Read gunzip json data.
-    /// Parse to csv.
+    /// Read a gzipped JSON file (e.g., produced by distribution pipeline),
+    /// decompress, and write it out in the configured format (JSON or CSV).
     pub fn write_from_gz(&self, json_path: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let file = fs::File::open(json_path)?;
         let inner = BufReader::new(file);
@@ -102,7 +120,7 @@ impl<'a> AllMddWriter<'a> {
     }
 }
 
-/// Write data structure for MDD data only.
+/// Write data structure for MDD data only (`Vec<MddData>` JSON array).
 pub struct MddWriter<'a> {
     pub output_dir: &'a Path,
     pub output_filename: &'a str,
@@ -140,6 +158,7 @@ impl Writer for MddWriter<'_> {
 }
 
 impl<'a> MddWriter<'a> {
+    /// Construct a new writer for species-only datasets.
     pub fn new(output_dir: &'a Path, output_filename: &'a str, to_csv: bool) -> Self {
         Self {
             output_dir,
@@ -148,7 +167,7 @@ impl<'a> MddWriter<'a> {
         }
     }
 
-    /// Write data to a file.
+    /// Persist provided JSON (array of `MddData`) to disk in JSON or CSV form.
     pub fn write(&self, json_data: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
         fs::create_dir_all(&self.output_dir)?;
         let output_path = self.create_output_path();
