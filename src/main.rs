@@ -1,29 +1,43 @@
-//! # MDD API
+//! # MDD API CLI
 //!
-//! This is a binary crate that provides a command-line interface to parse the MDD data from a CSV file and convert it to a JSON file.
+//! Command-line interface for parsing Mammal Diversity Database (MDD) release
+//! assets into structured JSON and related artifacts. See the crate-level docs
+//! and README for fuller examples.
 //!
-//! The CLI provides the following commands:
+//! ## Subcommands
+//! * `json` – Parse species + synonym CSV files directly.
+//! * `zip`  – Extract an MDD release archive (`MDD_v*.csv`, `Species_Syn_v*.csv`, optional `release.toml`) then parse.
+//! * `toml` – (Placeholder) drive parsing via a release metadata TOML file.
+//! * `db`   – (Placeholder) export into a SQLite database.
 //!
-//! - `to-json`: Converts the MDD data from a CSV file to a JSON file.
-//! - `from-zip`: Extracts the MDD data from a zip file and converts it to a JSON file.
-//! - `from-toml`: Not implemented yet.
-//! - `to-db`: Not implemented yet.
+//! ## JSON (`json`) Arguments
+//! * `--input/-i` species CSV path (default: `data.csv`)
+//! * `--synonym/-s` synonym CSV path (default: `synonyms.csv`)
+//! * `--output/-o` output directory (default: `../assets/data`)
+//! * `--plain-text/-p` also emit plain‑text (if supported)
+//! * `--mdd=<ver>` override MDD version
+//! * `--date <YYYY-MM-DD>` override release date
+//! * `--limit <n>` limit number of species (debugging)
+//! * `--prefix <str>` prefix output filenames
 //!
-//! The `to-json` command takes the following arguments:
+//! ## ZIP (`zip`) Arguments
+//! * `--input/-i` release archive path (default: `MDD.zip`)
+//! * `--output/-o` extraction + output directory (default: `.`)
 //!
-//! - `--input`: The path to the MDD CSV file.
-//! - `--synonym`: The path to the synonym CSV file.
-//! - `--output`: The path to the output directory.
-//! - `--plain-text`: Whether to write the output as plain text.
-//! - `--mdd-version`: The version of the MDD data.
-//! - `--release-date`: The release date of the MDD data.
-//! - `--limit`: The maximum number of records to parse.
-//! - `--prefix`: The prefix for the output file name.
+//! ## Zip Quick Start
+//! Minimal end‑to‑end example (also shown in README):
 //!
-//! The `from-zip` command takes the following arguments:
+//! ```text
+//! mdd zip --input MDD_2025_1.zip --output ./out
+//! # Produces JSON + stats (as implemented) under ./out
+//! ```
 //!
-//! - `--input`: The path to the zip file.
-//! - `--output`: The path to the output directory.
+//! Programmatic parsing mirrors the `ZipParser` steps: open archive, locate the
+//! `MDD_v*.csv` and `Species_Syn_v*.csv` entries, read to string, then feed into
+//! `MddData::from_csv` and `SynonymData::from_csv` followed by
+//! `ReleasedMddData::from_parser`.
+//!
+//! (Future work may stabilize a public helper around this flow.)
 //!
 use std::{
     fs,
