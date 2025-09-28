@@ -2,6 +2,10 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.6.1] - 2025-09-28
+
+- Fix: Clean and fix incorrect code documentation.
+
 ## [0.6.0] - 2025-09-28
 
 - Added: Parse release TOML file and integrate metadata into output.
