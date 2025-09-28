@@ -2,6 +2,8 @@
 
 Application programming interface to interact with MDD (Mammal Diversity Database) data.
 
+Code documented at [docs.rs/mdd_api](https://docs.rs/mdd_api).
+
 ## Overview
 
 This crate provides parsers and lightweight aggregation utilities for turning raw
@@ -59,6 +61,12 @@ Add to your `Cargo.toml`:
 ```toml
 [dependencies]
 mdd_api = "0.6"
+```
+
+Or using `cargo add`:
+
+```powershell
+cargo add mdd_api
 ```
 
 Minimal example parsing inline CSV strings and building a release bundle:
