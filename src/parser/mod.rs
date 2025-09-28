@@ -1,3 +1,13 @@
+//! Entry point for parsing and aggregating Mammal Diversity Database (MDD) data.
+//!
+//! This module exposes higher-level bundled data structures used by releases:
+//! * `ReleasedMddData` – concise species records + attached synonyms + release metadata.
+//! * `AllMddData` – full raw `MddData` rows plus all synonym rows.
+//! * `MetaData` – aggregate counts (species, genera, families, orders, etc.).
+//!
+//! It also provides helpers to construct these from parser outputs or from
+//! serialized JSON / gzipped JSON for distribution.
+
 use flate2::bufread::GzDecoder;
 use mdd::MddData;
 use serde::{Deserialize, Serialize};

@@ -1,17 +1,34 @@
+//! Parser utilities for MDD synonym CSV exports.
+//!
+//! The synonym file contains historical / alternative taxonomic names and
+//! associated bibliographic metadata. Column headers in the raw CSV are in
+//! snake_case and prefixed with `MDD_`. We strip that prefix and convert the
+//! remaining portion to camelCase so that serialized JSON aligns with other
+//! structs in this crate.
+
 use convert_case::Casing;
 use serde::{Deserialize, Serialize};
 
-/// MDD synonym CSV columns are in snake_case
-/// Prefixed with MDD_
-/// This struct will remove the prefix
-/// and convert to camelCase for JSON serialization
+/// Representation of a single synonym (or name usage) row from the MDD synonyms
+/// CSV.
+///
+/// Implementation details:
+/// * Most fields are `String` because the source frequently includes empty
+///   strings, mixed formatting, or free text that would be lossy if coerced.
+/// * `species_id` is optional: some synonym rows may not resolve to a current
+///   MDD species (e.g., unused combinations or uncertain placements). Those
+///   entries will appear in `ReleasedMddData.synonym_only` during aggregation.
+/// * Authority / citation fields retain upstream capitalization and punctuation.
 #[derive(Debug, Serialize, Default, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SynonymData {
+    /// Unique synonym identifier (internal to MDD synonym table).
     pub syn_id: u32,
+    /// HESP (Historical Ecology / or upstream) external ID when provided.
     pub hesp_id: u32,
-    // MDD species_id
+    /// Foreign key linking to an MDD species record; absent if not attached to a living/accepted taxon.
     pub species_id: Option<u32>,
+    // Below are raw text columns retained verbatim. We keep them private and provide JSON via serde.
     species: String,
     root_name: String,
     author: String,

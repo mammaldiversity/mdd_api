@@ -1,3 +1,30 @@
+//! # MDD API
+//!
+//! This is a binary crate that provides a command-line interface to parse the MDD data from a CSV file and convert it to a JSON file.
+//!
+//! The CLI provides the following commands:
+//!
+//! - `to-json`: Converts the MDD data from a CSV file to a JSON file.
+//! - `from-zip`: Extracts the MDD data from a zip file and converts it to a JSON file.
+//! - `from-toml`: Not implemented yet.
+//! - `to-db`: Not implemented yet.
+//!
+//! The `to-json` command takes the following arguments:
+//!
+//! - `--input`: The path to the MDD CSV file.
+//! - `--synonym`: The path to the synonym CSV file.
+//! - `--output`: The path to the output directory.
+//! - `--plain-text`: Whether to write the output as plain text.
+//! - `--mdd-version`: The version of the MDD data.
+//! - `--release-date`: The release date of the MDD data.
+//! - `--limit`: The maximum number of records to parse.
+//! - `--prefix`: The prefix for the output file name.
+//!
+//! The `from-zip` command takes the following arguments:
+//!
+//! - `--input`: The path to the zip file.
+//! - `--output`: The path to the output directory.
+//!
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -19,13 +46,20 @@ use crate::args::FromZipArgs;
 
 mod args;
 
+/// The default output file name for the JSON data.
 const DEFAULT_OUTPUT_FNAME: &str = "data";
+/// The default output file name for the country statistics.
 const DEFAULT_COUNTRY_STATS_FNAME: &str = "country_stats";
+/// The default output file name for the country region codes.
 const DEFAULT_COUNTRY_REGION_FNAME: &str = "country_region_code";
+/// The default JSON file extension.
 const JSON_EXT: &str = "json";
+/// The default gzip file extension.
 const GZIP_EXT: &str = "json.gz";
+/// The default prefix for the output file name.
 const DEFAULT_PREFIX: &str = "mdd";
 
+/// The main function of the CLI.
 fn main() {
     let args = Cli::parse();
     match args {
@@ -46,12 +80,16 @@ fn main() {
     }
 }
 
+/// A parser for extracting MDD data from a zip file.
 struct ZipParser<'a> {
+    /// The path to the input zip file.
     input_path: &'a Path,
+    /// The path to the output directory.
     output_path: &'a Path,
 }
 
 impl<'a> ZipParser<'a> {
+    /// Creates a new `ZipParser` from the command-line arguments.
     fn from_args(args: &'a FromZipArgs) -> Self {
         Self {
             input_path: &args.input,
@@ -59,6 +97,7 @@ impl<'a> ZipParser<'a> {
         }
     }
 
+    /// Parses the MDD data from the zip file and converts it to a JSON file.
     fn parse_to_json(&self) {
         self.extract_zip_file();
         // We will find the MDD file prefix with MDD_v in the file name.
@@ -105,6 +144,7 @@ impl<'a> ZipParser<'a> {
         json_parser.parse_to_json();
     }
 
+    /// Extracts the contents of the zip file to the output directory.
     fn extract_zip_file(&self) {
         let zip = std::fs::File::open(self.input_path).expect("Failed to open zip file");
         let mut archive = zip::ZipArchive::new(zip).expect("Failed to read zip file");
@@ -114,6 +154,7 @@ impl<'a> ZipParser<'a> {
             .expect("Failed to extract zip file");
     }
 
+    /// Finds the release.toml file in the extracted files.
     fn find_release_toml_file(&self, files: &[PathBuf]) -> Option<PathBuf> {
         for file in files {
             if file
@@ -129,6 +170,7 @@ impl<'a> ZipParser<'a> {
         None
     }
 
+    /// Finds the MDD file in the extracted files.
     fn find_mdd_file(&self, files: &[PathBuf]) -> Option<PathBuf> {
         for file in files {
             if file
@@ -144,6 +186,7 @@ impl<'a> ZipParser<'a> {
         None
     }
 
+    /// Finds the synonym file in the extracted files.
     fn find_synonym_file(&self, files: &[PathBuf]) -> Option<PathBuf> {
         for file in files {
             if file
@@ -160,18 +203,28 @@ impl<'a> ZipParser<'a> {
     }
 }
 
+/// A parser for converting MDD data from a CSV file to a JSON file.
 struct JsonParser<'a> {
+    /// The path to the input MDD CSV file.
     input_path: &'a Path,
+    /// The path to the input synonym CSV file.
     synonym_path: &'a Path,
+    /// The path to the output directory.
     output_path: &'a Path,
+    /// Whether to write the output as plain text.
     plain_text: bool,
+    /// The version of the MDD data.
     mdd_version: Option<String>,
+    /// The release date of the MDD data.
     release_date: Option<String>,
+    /// The maximum number of records to parse.
     limit: Option<usize>,
+    /// The prefix for the output file name.
     prefix: Option<&'a str>,
 }
 
 impl<'a> JsonParser<'a> {
+    /// Creates a new `JsonParser` from the given paths.
     fn from_path(input_path: &'a Path, synonym_path: &'a Path, output_path: &'a Path) -> Self {
         Self {
             input_path,
@@ -185,11 +238,13 @@ impl<'a> JsonParser<'a> {
         }
     }
 
+    /// Updates the release data of the `JsonParser`.
     fn update_release_data(&mut self, date: &str, version: &str) {
         self.release_date = Some(date.to_string());
         self.mdd_version = Some(version.to_string());
     }
 
+    /// Creates a new `JsonParser` from the command-line arguments.
     fn from_args(args: &'a JsonArgs) -> Self {
         Self {
             input_path: &args.input,
@@ -203,6 +258,7 @@ impl<'a> JsonParser<'a> {
         }
     }
 
+    /// Parses the MDD data from the CSV file and converts it to a JSON file.
     fn parse_to_json(&self) {
         let mdd_data = std::fs::read_to_string(self.input_path).expect("Failed to read MDD file");
         let syn_data =
@@ -278,10 +334,12 @@ impl<'a> JsonParser<'a> {
         );
     }
 
-    // We use the version if specified.
-    // Otherwise, we will infer from the file name.
-    // MDD species file_stem example: MDD_v2.2_6815species.
-    // In this case, the version is 2.2.
+    /// Returns the version of the MDD data.
+    ///
+    /// We use the version if specified.
+    /// Otherwise, we will infer from the file name.
+    /// MDD species file_stem example: MDD_v2.2_6815species.
+    /// In this case, the version is 2.2.
     fn get_version(&self) -> String {
         match &self.mdd_version {
             Some(version) => version.clone(),
@@ -305,7 +363,9 @@ impl<'a> JsonParser<'a> {
         }
     }
 
-    // We infer release date from the metadata if not specified.
+    /// Returns the release date of the MDD data.
+    ///
+    /// We infer release date from the metadata if not specified.
     fn get_release_date(&self) -> String {
         match &self.release_date {
             Some(date) => date.clone(),
@@ -321,19 +381,23 @@ impl<'a> JsonParser<'a> {
         }
     }
 
+    /// Limits the number of MDD data records.
     fn limit_mdd_data(&self, data: &mut Vec<MddData>, limit: usize) {
         data.truncate(limit);
     }
 
+    /// Limits the number of synonym data records.
     fn limit_synonym_data(&self, data: &mut Vec<SynonymData>, limit: usize) {
         data.truncate(limit);
     }
 
+    /// Writes the given data to a plain text file.
     fn write_plain_text(&self, data: &str) {
         let output = self.get_output_path(false);
         std::fs::write(output, data).expect("Unable to write file");
     }
 
+    /// Writes the given data to a gzip file.
     fn write_gzip(&self, data: &str) {
         let output = self.get_output_path(true);
         let file = std::fs::File::create(output).expect("Unable to create file");
@@ -341,6 +405,7 @@ impl<'a> JsonParser<'a> {
         std::io::Write::write_all(&mut encoder, data.as_bytes()).expect("Unable to write file");
     }
 
+    /// Returns the output path for the JSON file.
     fn get_output_path(&self, is_gunzip: bool) -> PathBuf {
         let fname = match self.prefix {
             Some(prefix) => prefix,

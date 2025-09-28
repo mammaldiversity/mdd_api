@@ -1,7 +1,17 @@
-//! This module defines the `CountryMDDStats` struct, which holds statistics about MDD species in a specific country.
-//! It parse MDD data and aggregates statistics for each country.
-//! Excludes domesticated and widely distributed species.
-//! Basically, any species that do not list country distribution in MDD data, including human.
+//! Country-level aggregation of MDD species distribution data.
+//!
+//! This module parses the `country_distribution` field from `MddData` records
+//! and produces summary statistics per country / region. It intentionally:
+//! * Excludes species marked as "domesticated" (`domesticated` bucket) or
+//!   widespread placeholder entries (value equal to "NA").
+//! * Tracks predicted distributions (those ending with a `?`) by appending a
+//!   `?` to the stored species ID so callers can distinguish them later.
+//! * Emits warnings for unknown country/region names (falling back to the raw
+//!   name when a standardized code can't be resolved).
+//!
+//! The resulting `CountryMDDStats` structure is designed for downstream JSON
+//! consumption in UI or API layers and keeps counts plus ID lists rather than
+//! duplicating full species data.
 
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -19,12 +29,15 @@ use crate::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CountryMDDStats {
+    /// Total number of countries / regions represented (size of `country_data`).
     pub total_countries: u32,
+    /// IDs of species that were classified as domesticated (excluded from per-country breakdown).
     pub domesticated: Vec<u32>,
+    /// IDs of species whose distribution was marked as widespread/unspecified (value == "NA").
     pub widespread: Vec<u32>,
-    /// Map of country code to `CountryData`.
-    /// The key is the country or region name.
-    /// Predicted distribution is indicated by a question mark at the end of the country code.
+    /// Map of country code to `CountryData` record.
+    /// The key is standardized country/region code (or raw name when unrecognized).
+    /// Predicted distribution rows store species IDs with a trailing `?`.
     pub country_data: BTreeMap<String, CountryData>,
 }
 
