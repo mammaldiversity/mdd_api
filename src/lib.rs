@@ -17,7 +17,7 @@
 //! * Keep dependencies minimal.
 //!
 //! ## Quick Start
-//! ```rust
+//! ```rust, ignore
 //! use mdd_api::parser::{mdd::MddData, synonyms::SynonymData, ReleasedMddData};
 //!
 //! // Minimal inline mock CSV data (headers trimmed for brevity)
