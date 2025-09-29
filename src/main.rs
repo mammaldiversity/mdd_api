@@ -130,7 +130,7 @@ impl<'a> ZipParser<'a> {
         };
         println!("Found {} MDD files.", files.len());
         println!("Finding release.toml file...");
-        let meta_path = self.find_release_toml_file(&files);
+        let meta_path = self.find_release_toml_file(self.output_path);
         let meta = if let Some(meta_path) = meta_path {
             let metadata =
                 ReleaseToml::from_file(&meta_path).expect("Failed to read release.toml file");
@@ -169,16 +169,10 @@ impl<'a> ZipParser<'a> {
     }
 
     /// Finds the release.toml file in the extracted files.
-    fn find_release_toml_file(&self, files: &[PathBuf]) -> Option<PathBuf> {
-        for file in files {
-            if file
-                .file_name()
-                .expect("Failed to get file name")
-                .to_str()
-                .expect("Failed to convert OsStr to str")
-                .ends_with("release.toml")
-            {
-                return Some(file.to_path_buf());
+    fn find_release_toml_file(&self, output_path: &Path) -> Option<PathBuf> {
+        for file in glob::glob(&format!("{}/**/release.toml", output_path.display())).unwrap() {
+            if let Ok(path) = file {
+                return Some(path);
             }
         }
         None

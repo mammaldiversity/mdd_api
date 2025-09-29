@@ -2,6 +2,10 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.6.2] - 2025-09-29
+
+- Fix: Correctly locate `release.toml` in nested directories within zip archives.
+
 ## [0.6.1] - 2025-09-28
 
 - Fix: Clean and fix incorrect code documentation.
