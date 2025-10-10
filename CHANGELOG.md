@@ -2,6 +2,11 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.7.0] - 2025-09-30
+
+- Added: CLI subcommand `unpack` to extract and parse MDD zip files directly.
+- Changed: Refactored codebase to modular structure (cli, parser, writer, mdd, helper).
+
 ## [0.6.2] - 2025-09-29
 
 - Fix: Correctly locate `release.toml` in nested directories within zip archives.

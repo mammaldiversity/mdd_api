@@ -1,7 +1,7 @@
 [package]
 name = "mdd_api"
-version = "0.6.2"
-edition = "2021"
+version = "0.7.0"
+edition = "2024"
 repository = "https://github.com/mammaldiversity/mdd_app"
 authors = ["Heru Handika <herubiolog@gmail.com>"]
 homepage = "https://www.mammaldiversity.org/"
