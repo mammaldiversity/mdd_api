@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 ///   contain composite, approximate, or blank entries.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct MddData {
+pub struct SpeciesData {
     /// Unique numeric identifier for the species record (MDD internal ID).
     pub id: u32,
     /// Full scientific binomial (potentially including infraspecific parts) as used in MDD.
@@ -136,7 +136,7 @@ pub struct MddData {
     pub diff_since_msw3: String,
 }
 
-impl MddData {
+impl SpeciesData {
     pub fn new() -> Self {
         Self {
             id: 0,
@@ -194,7 +194,7 @@ impl MddData {
 
     /// Parse csv data to json.
     /// Return in String json format.
-    pub fn from_csv(&self, csv_data: &str) -> Vec<MddData> {
+    pub fn from_csv(&self, csv_data: &str) -> Vec<SpeciesData> {
         let mut rdr = csv::Reader::from_reader(csv_data.as_bytes());
         let mut records = Vec::new();
         for result in rdr.deserialize() {
@@ -219,7 +219,7 @@ mod tests {
     fn test_parse_to_json() {
         let csv_data = Path::new("tests/data/test_data.csv");
         let csv_data = std::fs::read_to_string(csv_data).unwrap();
-        let parser = MddData::new();
+        let parser = SpeciesData::new();
         let json_data = parser.from_csv(&csv_data);
         // let data = AllMddData::from_json(&json_data);
         assert_eq!(json_data.len(), 112);

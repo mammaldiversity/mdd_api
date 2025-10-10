@@ -22,7 +22,7 @@ use std::{
 
 use flate2::bufread::MultiGzDecoder;
 
-use crate::parser::{mdd::MddData, AllMddData};
+use crate::mdd::{species::SpeciesData, AllMddData};
 
 const CSV_EXTENSION: &str = "csv";
 const JSON_EXTENSION: &str = "json";
@@ -185,7 +185,7 @@ impl<'a> MddWriter<'a> {
         output_path: &Path,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut wtr = csv::Writer::from_path(output_path)?;
-        let records: Vec<MddData> = serde_json::from_str(&json_data)?;
+        let records: Vec<SpeciesData> = serde_json::from_str(&json_data)?;
         for record in records {
             wtr.serialize(record)?;
         }

@@ -1,4 +1,4 @@
-use mdd_api::parser::metadata::ReleaseToml;
+use mdd_api::mdd::metadata::ReleaseToml;
 use std::path::Path;
 
 #[test]

@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     helper::{country_code, MDD_LIST_SEPARATOR},
-    parser::mdd::MddData,
+    mdd::species::SpeciesData,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,7 +55,7 @@ impl CountryMDDStats {
     /// It parses the country distribution and aggregates statistics for each country.
     /// It excludes domesticated species and widespread species (e.g., "NA" country list).
     /// If the country list does not match any known country code, it uses the country name as the code.
-    pub fn parse_country_data(&mut self, mdd_data: &[MddData]) {
+    pub fn parse_country_data(&mut self, mdd_data: &[SpeciesData]) {
         // We use country code as the key for country_data.
         let mut records: HashMap<String, CountryRecord> = HashMap::new();
         for species in mdd_data {
@@ -141,7 +141,7 @@ impl CountryMDDStats {
         &mut self,
         records: &mut HashMap<String, CountryRecord>,
         distribution: &str,
-        data: &MddData,
+        data: &SpeciesData,
     ) {
         let countries = distribution.split(MDD_LIST_SEPARATOR);
         for country in countries {
@@ -153,7 +153,7 @@ impl CountryMDDStats {
         &mut self,
         country_name: &str,
         records: &mut HashMap<String, CountryRecord>,
-        data: &MddData,
+        data: &SpeciesData,
     ) {
         let country_name = country_name.trim();
         if country_name.is_empty() {
@@ -257,7 +257,7 @@ impl CountryRecord {
         }
     }
 
-    fn update(&mut self, data: &MddData, predicted_distribution: bool) {
+    fn update(&mut self, data: &SpeciesData, predicted_distribution: bool) {
         self.add_species(data.id.to_string(), data.extinct, predicted_distribution);
         self.add_order(data.taxon_order.to_string());
         self.add_family(data.family.to_string());

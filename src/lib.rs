@@ -33,6 +33,8 @@
 //! ```
 //!
 //! See the README for more detailed workflow guidance.
+pub mod cli;
 pub mod helper;
+pub mod mdd;
 pub mod parser;
 pub mod writer;
