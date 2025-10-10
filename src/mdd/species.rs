@@ -1,5 +1,7 @@
 //! Parse MDD csv data into a structured format.
 
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
 /// Primary record representing a single species row from the Mammal Diversity Database (MDD)
@@ -206,6 +208,12 @@ impl SpeciesData {
 
     pub fn to_json(&self) -> String {
         serde_json::to_string(&self).expect("Failed to serialize")
+    }
+
+    pub fn to_csv(&self, output_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let mut wtr = csv::Writer::from_path(output_path)?;
+        wtr.serialize(self)?;
+        Ok(())
     }
 }
 

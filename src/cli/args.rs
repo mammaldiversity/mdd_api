@@ -33,7 +33,7 @@ pub enum Cli {
 
 #[derive(Subcommand)]
 pub enum FilterSubcommand {
-    #[command(name = "by-country", about = "Filter MDD data by country codes")]
+    #[command(name = "country", about = "Filter MDD data by country codes")]
     ByCountry(FilterByCountryArgs),
 }
 
