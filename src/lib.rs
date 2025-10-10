@@ -34,6 +34,7 @@
 //!
 //! See the README for more detailed workflow guidance.
 pub mod cli;
+pub mod filter;
 pub mod helper;
 pub mod mdd;
 pub mod parser;

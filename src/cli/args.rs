@@ -15,7 +15,7 @@
 
 use std::path::PathBuf;
 
-use clap::{crate_authors, crate_description, crate_name, crate_version, Args, Parser};
+use clap::{Args, Parser, Subcommand, crate_authors, crate_description, crate_name, crate_version};
 
 /// Top-level CLI dispatcher enumerating supported subcommands.
 #[derive(Parser)]
@@ -23,17 +23,37 @@ use clap::{crate_authors, crate_description, crate_name, crate_version, Args, Pa
 pub enum Cli {
     #[command(name = "unpack", about = "Parse MDD data and export different formats")]
     Unpack(UnpackArgs),
+    #[command(
+        subcommand,
+        name = "filter",
+        about = "Filter MDD data by country codes"
+    )]
+    Filter(FilterSubcommand),
+}
+
+#[derive(Subcommand)]
+pub enum FilterSubcommand {
+    #[command(name = "by-country", about = "Filter MDD data by country codes")]
+    ByCountry(FilterByCountryArgs),
+}
+
+#[derive(Args)]
+pub struct FilterByCountryArgs {
+    #[command(flatten)]
+    pub input: CommonInput,
+    /// Output file path
+    #[command(flatten)]
+    pub output: CommonOutput,
+    /// Country codes to filter by
+    #[arg(long, short, help = "Country codes to filter by")]
+    pub country_codes: Vec<String>,
 }
 
 /// Arguments for the `zip` subcommand (compressed source processing).
 #[derive(Args)]
 pub struct UnpackArgs {
-    /// Input ZIP archive containing release assets.
-    #[arg(long, short, default_value = "MDD.zip", help = "Input MDD ZIP file")]
-    pub input: PathBuf,
-    /// File format to export (json, db, toml, etc).
-    #[arg(long, short, default_value = "zip", help = "Output format")]
-    pub format: String,
+    #[command(flatten)]
+    pub input: CommonInput,
     /// Override MDD version string for metadata embedding.
     #[arg(long = "mdd", help = "MDD data version", require_equals = true)]
     pub mdd_version: Option<String>,
@@ -58,4 +78,19 @@ pub struct CommonOutput {
     /// Add a file name prefix to all exported artifacts.
     #[arg(long, help = "Add prefix to output files")]
     pub prefix: Option<String>,
+}
+
+#[derive(Args)]
+pub struct CommonInput {
+    /// Input species CSV file path.
+    #[arg(
+        long,
+        short,
+        default_value = "MDD.csv",
+        help = "Input MDD species CSV file"
+    )]
+    pub input: PathBuf,
+    /// File format to export (json, db, toml, etc).
+    #[arg(long, short, default_value = "zip", help = "Output format")]
+    pub format: String,
 }

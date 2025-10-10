@@ -14,7 +14,7 @@ impl<'a> ZipParser<'a> {
     /// Creates a new `ZipParser` from the command-line arguments.
     pub fn from_args(args: &'a UnpackArgs) -> Self {
         Self {
-            input_path: &args.input,
+            input_path: &args.input.input,
             output_path: &args.output.output,
         }
     }
@@ -116,5 +116,43 @@ impl<'a> ZipParser<'a> {
             }
         }
         None
+    }
+}
+
+pub struct MddArchive {
+    pub release_file: Option<PathBuf>,
+    pub species_file: Option<PathBuf>,
+    pub synonym_file: Option<PathBuf>,
+}
+
+impl MddArchive {
+    pub fn new() -> Self {
+        Self {
+            release_file: None,
+            species_file: None,
+            synonym_file: None,
+        }
+    }
+
+    pub fn from_path(zip_path: &Path, output_path: &Path) -> Self {
+        let file = std::fs::File::open(zip_path).expect("Failed to open zip file");
+        let mut archive = zip::ZipArchive::new(file).expect("Failed to read zip file");
+        archive
+            .extract(output_path)
+            .expect("Failed to extract zip file");
+        let mut mdd_archive = MddArchive::new();
+
+        for i in 0..archive.len() {
+            let file = archive.by_index(i).expect("Failed to get file by index");
+            let file_name = file.name().to_string();
+            if file_name.ends_with("release.toml") {
+                mdd_archive.release_file = Some(output_path.join(&file_name));
+            } else if file_name.contains("MDD_v") && file_name.ends_with(".csv") {
+                mdd_archive.species_file = Some(output_path.join(&file_name));
+            } else if file_name.contains("Species_Syn_v") && file_name.ends_with(".csv") {
+                mdd_archive.synonym_file = Some(output_path.join(&file_name));
+            }
+        }
+        mdd_archive
     }
 }

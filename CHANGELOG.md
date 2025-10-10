@@ -6,6 +6,7 @@
 
 - Added: CLI subcommand `unpack` to extract and parse MDD zip files directly.
 - Changed: Refactored codebase to modular structure (cli, parser, writer, mdd, helper).
+- Changed: Updated dependencies and Rust edition to 2024.
 
 ## [0.6.2] - 2025-09-29
 
