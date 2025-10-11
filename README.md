@@ -69,8 +69,7 @@ cargo install mdd_api
 If you have an official MDD release archive (for example `MDD.zip`) that
 contains the species CSV (named like `MDD_v*.csv`), the synonym CSV
 (`Species_Syn_v*.csv`), and optionally a `release.toml`, you can parse it in a
-single step. The `zip` subcommand currently serves as a convenience entry point
-and example; programmatic parsing typically gives you more control.
+single step.
 
 ```powershell
 # Extract and parse directly from a ZIP archive; outputs JSON to current directory

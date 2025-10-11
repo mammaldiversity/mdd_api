@@ -49,7 +49,10 @@ impl<'a> SpeciesWriter<'a> {
         species_data: &[SpeciesData],
         output_path: &Path,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut wtr = csv::Writer::from_path(output_path)?;
+        let mut wtr = csv::WriterBuilder::new()
+            .has_headers(true)
+            .from_path(output_path)?;
+
         for record in species_data {
             wtr.serialize(record)?;
         }
