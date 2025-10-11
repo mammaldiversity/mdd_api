@@ -56,6 +56,38 @@ status codes can layer additional domain models on top.
 
 ## Quick Start
 
+### CLI Usage
+
+Install the CLI tool with:
+
+```powershell
+cargo install mdd_api
+```
+
+#### Unpack and Parse from Zip
+
+If you have an official MDD release archive (for example `MDD.zip`) that
+contains the species CSV (named like `MDD_v*.csv`), the synonym CSV
+(`Species_Syn_v*.csv`), and optionally a `release.toml`, you can parse it in a
+single step. The `zip` subcommand currently serves as a convenience entry point
+and example; programmatic parsing typically gives you more control.
+
+```powershell
+# Extract and parse directly from a ZIP archive; outputs JSON to current directory
+mdd unpack --input MDD.zip --output ./out
+```
+
+#### Filter by Country
+
+Use the `filter country` subcommand to extract species by country code from an MDD zip file. The country code should be provided in ISO 3166-1 alpha-2 format.
+
+```powershell
+# Filter species by country (e.g., Indonesia) and output JSON to ./out
+mdd filter country -i MDD.zip -c ID -o ./out/indonesia
+```
+
+### Library Usage
+
 Add to your `Cargo.toml`:
 
 ```toml
@@ -83,23 +115,7 @@ let release = ReleasedMddData::from_parser(species, synonyms, "2025.1", "2025-09
 println!("{}", release.to_json());
 ```
 
-CLI usage (after installing with `cargo install mdd_api` or running from source):
-
-```powershell
-# Parse CSVs and output JSON bundle
-mdd json --input mdd.csv --synonym synonyms.csv --output ./out --mdd="v2.0" --date 2025-09-01
-```
-
 ### Zip Quick Start
-
-If you have an official MDD release archive (for example `MDD.zip`) that
-contains the species CSV (named like `MDD_v*.csv`), the synonym CSV
-(`Species_Syn_v*.csv`), and optionally a `release.toml`, you can parse it in a
-single step. The `zip` subcommand currently serves as a convenience entry point
-and example; programmatic parsing typically gives you more control.
-
-Programmatic (minimal) example using the internal `ZipParser` logic found in
-`main.rs` (API surface may stabilize later):
 
 ```rust
 use std::fs::File;
@@ -131,20 +147,6 @@ fn parse_from_zip<P: AsRef<Path>>(zip_path: P) -> anyhow::Result<ReleasedMddData
     Ok(ReleasedMddData::from_parser(species, synonyms, "2025.1", "2025-09-01"))
 }
 ```
-
-CLI (auto-detects matching CSV names inside the archive):
-
-```powershell
-# Extract and parse directly from a ZIP archive; outputs JSON to current directory
-mdd zip --input MDD.zip --output ./out
-```
-
-Notes:
-
-- The current `zip` subcommand focuses on demonstration; future versions may
-  emit multiple artifacts (e.g. filtered JSON, stats) similar to `json`.
-- You can still manually unzip then invoke `mdd json -i <species.csv> -s <synonyms.csv>`
-  if you prefer an explicit pipeline.
 
 ## Testing
 

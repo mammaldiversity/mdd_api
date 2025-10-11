@@ -8,7 +8,7 @@ use regex::Regex;
 
 use crate::{
     helper::country_code::CountryRegionCode,
-    mdd::{country::CountryMDDStats, species::SpeciesData, synonyms::SynonymData, ReleasedMddData},
+    mdd::{ReleasedMddData, country::CountryStats, species::SpeciesData, synonyms::SynonymData},
 };
 
 /// The default output file name for the JSON data.
@@ -100,7 +100,7 @@ impl<'a> JsonParser<'a> {
         }
 
         println!("Creating country mammal diversity statistics from MDD records");
-        let mut country_stats = CountryMDDStats::new();
+        let mut country_stats = CountryStats::new();
         country_stats.parse_country_data(&mdd_data);
         println!(
             "Total countries and regions: {}, Total domesticated species: {}, Total widespread species: {}",

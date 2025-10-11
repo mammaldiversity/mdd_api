@@ -1,5 +1,10 @@
+use std::fs::File;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
+use zip::ZipArchive;
+
+use crate::mdd::species::SpeciesData;
 use crate::{cli::args::UnpackArgs, mdd::metadata::ReleaseToml, parser::json::JsonParser};
 
 /// A parser for extracting MDD data from a zip file.
@@ -120,39 +125,39 @@ impl<'a> ZipParser<'a> {
 }
 
 pub struct MddArchive {
-    pub release_file: Option<PathBuf>,
-    pub species_file: Option<PathBuf>,
-    pub synonym_file: Option<PathBuf>,
+    pub release_meta: Option<String>,
+    pub species_data: Vec<SpeciesData>,
+    pub synonym_data: Vec<SpeciesData>,
 }
 
 impl MddArchive {
     pub fn new() -> Self {
         Self {
-            release_file: None,
-            species_file: None,
-            synonym_file: None,
+            release_meta: None,
+            species_data: Vec::new(),
+            synonym_data: Vec::new(),
         }
     }
 
-    pub fn from_path(zip_path: &Path, output_path: &Path) -> Self {
-        let file = std::fs::File::open(zip_path).expect("Failed to open zip file");
-        let mut archive = zip::ZipArchive::new(file).expect("Failed to read zip file");
-        archive
-            .extract(output_path)
-            .expect("Failed to extract zip file");
-        let mut mdd_archive = MddArchive::new();
-
+    pub fn get_species_data(&mut self, zip_path: &Path) {
+        let mut archive = self.open_file(zip_path);
         for i in 0..archive.len() {
-            let file = archive.by_index(i).expect("Failed to get file by index");
+            let mut file = archive.by_index(i).expect("Failed to get file by index");
             let file_name = file.name().to_string();
-            if file_name.ends_with("release.toml") {
-                mdd_archive.release_file = Some(output_path.join(&file_name));
-            } else if file_name.contains("MDD_v") && file_name.ends_with(".csv") {
-                mdd_archive.species_file = Some(output_path.join(&file_name));
-            } else if file_name.contains("Species_Syn_v") && file_name.ends_with(".csv") {
-                mdd_archive.synonym_file = Some(output_path.join(&file_name));
+            if file_name.contains("MDD_v") && file_name.ends_with(".csv") {
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)
+                    .expect("Failed to read file contents");
+                let parser = SpeciesData::new();
+                self.species_data = parser.from_csv(&contents);
+                break;
             }
         }
-        mdd_archive
+    }
+
+    pub fn open_file(&self, zip_path: &Path) -> ZipArchive<File> {
+        let file = File::open(zip_path).expect("Failed to open zip file");
+        let archive = zip::ZipArchive::new(file).expect("Failed to read zip file");
+        archive
     }
 }

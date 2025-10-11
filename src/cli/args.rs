@@ -17,6 +17,8 @@ use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, crate_authors, crate_description, crate_name, crate_version};
 
+use crate::helper::types::OutputFormat;
+
 /// Top-level CLI dispatcher enumerating supported subcommands.
 #[derive(Parser)]
 #[command(name = crate_name!(), version = crate_version!(), about = crate_description!(), author = crate_authors!())]
@@ -45,7 +47,12 @@ pub struct FilterByCountryArgs {
     #[command(flatten)]
     pub output: CommonOutput,
     /// Country codes to filter by
-    #[arg(long, short, help = "Country codes to filter by")]
+    #[arg(
+        long,
+        short,
+        value_delimiter = ',',
+        help = "Country codes to filter by"
+    )]
     pub country_codes: Vec<String>,
 }
 
@@ -70,8 +77,14 @@ pub struct CommonOutput {
     #[arg(long, short, default_value = ".", help = "Output directory")]
     pub output: PathBuf,
     /// Output format
-    #[arg(long, short = 'F', default_value = "gzip", help = "Output file format")]
-    pub output_format: String,
+    #[arg(
+        value_enum,
+        long,
+        short = 'F',
+        default_value = "csv",
+        help = "Output file format"
+    )]
+    pub output_format: OutputFormat,
     /// Limit number of species records to parse.
     #[arg(long = "limit", help = "Limit number of records")]
     pub limit: Option<usize>,

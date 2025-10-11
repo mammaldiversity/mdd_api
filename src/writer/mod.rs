@@ -13,6 +13,7 @@
 //!   `AllMddWriter::write_from_gz`.
 //! * Both writers expose a `to_csv` flag; when false, raw JSON is written
 //!   unchanged.
+pub mod species;
 
 use std::{
     fs,
@@ -22,7 +23,7 @@ use std::{
 
 use flate2::bufread::MultiGzDecoder;
 
-use crate::mdd::{species::SpeciesData, AllMddData};
+use crate::mdd::{AllMddData, species::SpeciesData};
 
 const CSV_EXTENSION: &str = "csv";
 const JSON_EXTENSION: &str = "json";

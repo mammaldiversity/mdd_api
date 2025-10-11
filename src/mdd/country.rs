@@ -22,13 +22,13 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    helper::{country_code, MDD_LIST_SEPARATOR},
+    helper::{MDD_LIST_SEPARATOR, country_code},
     mdd::species::SpeciesData,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CountryMDDStats {
+pub struct CountryStats {
     /// Total number of countries / regions represented (size of `country_data`).
     pub total_countries: u32,
     /// IDs of species that were classified as domesticated (excluded from per-country breakdown).
@@ -41,7 +41,7 @@ pub struct CountryMDDStats {
     pub country_data: BTreeMap<String, CountryData>,
 }
 
-impl CountryMDDStats {
+impl CountryStats {
     pub fn new() -> Self {
         Self {
             total_countries: 0,

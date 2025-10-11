@@ -1,18 +1,23 @@
-use std::{fs, path::Path};
+use std::path::Path;
 
 use crate::{
     cli::args::FilterByCountryArgs,
+    helper::types::OutputFormat,
     mdd::{
-        country::{CountryData, CountryMDDStats},
+        country::{CountryData, CountryStats},
         species::SpeciesData,
     },
     parser::zip::MddArchive,
+    writer::species::SpeciesWriter,
 };
+
+const DEFAULT_PREFIX: &str = "mdd_filtered_by_countries";
 
 pub struct FilterByCountry<'a> {
     pub input_path: &'a Path,
     pub output_path: &'a Path,
-    pub output_format: &'a str,
+    pub prefix: Option<&'a str>,
+    pub output_format: &'a OutputFormat,
     pub country_codes: &'a [String],
 }
 
@@ -20,7 +25,7 @@ impl<'a> FilterByCountry<'a> {
     pub fn new(
         input_path: &'a Path,
         output_path: &'a Path,
-        output_format: &'a str,
+        output_format: &'a OutputFormat,
         country_codes: &'a [String],
     ) -> Self {
         Self {
@@ -28,6 +33,7 @@ impl<'a> FilterByCountry<'a> {
             output_path,
             output_format,
             country_codes,
+            prefix: None,
         }
     }
 
@@ -37,35 +43,35 @@ impl<'a> FilterByCountry<'a> {
             output_path: &args.output.output,
             output_format: &args.output.output_format,
             country_codes: &args.country_codes,
+            prefix: args.output.prefix.as_deref(),
         }
     }
 
     pub fn filter(&self) {
         println!("Extracting archive from: {:?}", self.input_path);
-        let data = MddArchive::from_path(self.input_path, self.output_path);
-        match data.species_file {
-            Some(path) => {
-                let mut species_data = self.parse_species_data(&path);
-                let country_data = self.get_country_species_list(&species_data);
-                self.filter_species_data_by_ids(&mut species_data, &country_data);
-                self.write_filtered_data(&species_data);
-            }
-            None => {
-                panic!("No species data file found in the archive.");
-            }
-        }
+
+        let mut species_data = self.parse_species_data(&self.input_path);
+        let country_data = self.get_country_species_list(&species_data);
+        self.filter_species_data_by_ids(&mut species_data, &country_data);
+        self.write_filtered_data(&species_data);
     }
 
     fn parse_species_data(&self, path: &Path) -> Vec<SpeciesData> {
-        let mdd_data = std::fs::read_to_string(path).expect("Failed to read MDD file");
-        let parser = SpeciesData::new();
-        let mdd_data = parser.from_csv(&mdd_data);
-        println!("Total MDD records: {}", mdd_data.len());
-        return mdd_data;
+        let mut mdd_data = MddArchive::new();
+        mdd_data.get_species_data(path);
+        mdd_data.species_data
+
+        // // We show the path if it fails.
+        // println!("Parsing species data from: {:?}", path);
+        // let mdd_data = std::fs::read_to_string(path).expect("Failed to read MDD file");
+        // let parser = SpeciesData::new();
+        // let mdd_data = parser.from_csv(&mdd_data);
+        // println!("Total MDD records: {}", mdd_data.len());
+        // return mdd_data;
     }
 
     fn get_country_species_list(&self, data: &[SpeciesData]) -> Vec<String> {
-        let mut country_data = CountryMDDStats::new();
+        let mut country_data = CountryStats::new();
         country_data.parse_country_data(data);
         country_data
             .country_data
@@ -95,27 +101,18 @@ impl<'a> FilterByCountry<'a> {
     }
 
     fn write_filtered_data(&self, data: &[SpeciesData]) {
-        fs::create_dir_all(self.output_path).unwrap_or_else(|_| {
-            panic!("Failed to create output directory: {:?}", self.output_path)
-        });
-        let output_file = self.output_path.join(format!(
-            "mdd_filtered_by_countries.{}",
-            if self.output_format == "csv" {
-                "csv"
-            } else {
-                "json"
-            }
-        ));
-        if self.output_format == "csv" {
-            let writer = SpeciesData::new();
-            writer
-                .to_csv(&output_file)
-                .expect("Failed to write filtered data to CSV");
-            println!("Filtered data written to: {:?}", output_file);
-        } else {
-            let json_data = serde_json::to_string(data).expect("Failed to serialize filtered data");
-            std::fs::write(&output_file, json_data).expect("Failed to write filtered data to JSON");
-            println!("Filtered data written to: {:?}", output_file);
+        let prefix = self.get_output_prefix();
+        let writer = SpeciesWriter::from_path(self.output_path, &prefix, self.output_format);
+        let output_file = writer
+            .write(data)
+            .expect("Failed to write filtered species data");
+        println!("Filtered species data written to: {:?}", output_file);
+    }
+
+    fn get_output_prefix(&self) -> String {
+        match self.prefix {
+            Some(p) => p.to_string(),
+            None => DEFAULT_PREFIX.to_string(),
         }
     }
 }
