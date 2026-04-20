@@ -8,7 +8,10 @@ use regex::Regex;
 
 use crate::{
     helper::country_code::CountryRegionCode,
-    mdd::{ReleasedMddData, country::CountryStats, species::SpeciesData, synonyms::SynonymData},
+    mdd::{
+        ReleasedMddData, country::CountryStats, species::SpeciesData, synonyms::SynonymData,
+        usa::UsaStats,
+    },
 };
 
 /// The default output file name for the JSON data.
@@ -17,6 +20,8 @@ const DEFAULT_OUTPUT_FNAME: &str = "data";
 const DEFAULT_COUNTRY_STATS_FNAME: &str = "country_stats";
 /// The default output file name for the country region codes.
 const DEFAULT_COUNTRY_REGION_FNAME: &str = "country_region_code";
+/// The default output file name for the USA statistics.
+const DEFAULT_USA_STATE_DATA_FNAME: &str = "usa_states";
 /// The default JSON file extension.
 const JSON_EXT: &str = "json";
 /// The default gzip file extension.
@@ -81,24 +86,66 @@ impl<'a> JsonParser<'a> {
 
     /// Parses the MDD data from the CSV file and converts it to a JSON file.
     pub fn parse_to_json(&self) {
-        let mdd_data = std::fs::read_to_string(self.input_path).expect("Failed to read MDD file");
-        let syn_data =
-            std::fs::read_to_string(self.synonym_path).expect("Failed to read synonym file");
-
-        println!("Parsing MDD data from: {:?}", self.input_path);
-        let parser = SpeciesData::new();
-        let mut mdd_data = parser.from_csv(&mdd_data);
-        println!("Found MDD data records: {}", mdd_data.len());
-
-        println!("Parsing synonym data from: {:?}", self.synonym_path);
-        let synonyms = SynonymData::new();
-        let mut synonym_data = synonyms.from_csv(&syn_data);
-        println!("Found synonym data records: {}", synonym_data.len());
+        let mut mdd_data = self.parse_mdd_data();
+        let mut synonym_data = self.parse_synonym_data();
+        // State-level data for USA
+        let usa_data = self.parse_usa_data(&mdd_data);
 
         if synonym_data.is_empty() {
             println!("No synonym data found");
         }
 
+        let country_stats = self.parse_country_stats(&mdd_data);
+
+        if self.limit.is_some() {
+            self.limit_mdd_data(&mut mdd_data, self.limit.unwrap());
+            self.limit_synonym_data(&mut synonym_data, self.limit.unwrap());
+        }
+
+        let mdd_version = self.get_version();
+        let release_date = self.get_release_date();
+
+        println!(
+            "Using MDD version: {}, release date: {}",
+            mdd_version, release_date
+        );
+
+        let released_json = self.merge_data(mdd_data, synonym_data);
+        self.create_dir_if_not_exist();
+
+        if self.plain_text {
+            self.write_plain_text(&released_json);
+            self.write_gzip(&released_json);
+            println!("Output written to: {:?}", self.get_output_path(false));
+        } else {
+            self.write_gzip(&released_json);
+        }
+
+        self.write_country_stats(&country_stats);
+        self.write_country_code();
+        self.write_usa_stats(&usa_data);
+    }
+
+    fn parse_mdd_data(&self) -> Vec<SpeciesData> {
+        let mdd_data = std::fs::read_to_string(self.input_path).expect("Failed to read MDD file");
+        println!("Parsing MDD data from: {:?}", self.input_path);
+        let parser = SpeciesData::new();
+        let mdd_data = parser.from_csv(&mdd_data);
+        println!("Found MDD data records: {}", mdd_data.len());
+        mdd_data
+    }
+
+    fn parse_synonym_data(&self) -> Vec<SynonymData> {
+        let syn_data =
+            std::fs::read_to_string(self.synonym_path).expect("Failed to read synonym file");
+        println!("Parsing synonym data from: {:?}", self.synonym_path);
+        let synonyms = SynonymData::new();
+        let synonym_data = synonyms.from_csv(&syn_data);
+        println!("Found synonym data records: {}", synonym_data.len());
+        synonym_data
+    }
+
+    fn parse_country_stats(&self, mdd_data: &[SpeciesData]) -> CountryStats {
         println!("Creating country mammal diversity statistics from MDD records");
         let mut country_stats = CountryStats::new();
         country_stats.parse_country_data(&mdd_data);
@@ -108,51 +155,29 @@ impl<'a> JsonParser<'a> {
             country_stats.domesticated.len(),
             country_stats.widespread.len()
         );
+        country_stats
+    }
 
-        if self.limit.is_some() {
-            self.limit_mdd_data(&mut mdd_data, self.limit.unwrap());
-            self.limit_synonym_data(&mut synonym_data, self.limit.unwrap());
-        }
-        let mdd_version = self.get_version();
-        let release_date = self.get_release_date();
-        println!(
-            "Using MDD version: {}, release date: {}",
-            mdd_version, release_date
+    fn parse_usa_data(&self, mdd_data: &[SpeciesData]) -> String {
+        let mut usa_stats = UsaStats::new();
+        usa_stats.from_country_data(mdd_data);
+        usa_stats.to_json()
+    }
+
+    fn merge_data(&self, mdd_data: Vec<SpeciesData>, synonym_data: Vec<SynonymData>) -> String {
+        let all_data = ReleasedMddData::from_parser(
+            mdd_data,
+            synonym_data,
+            &self.get_version(),
+            &self.get_release_date(),
         );
-        let all_data =
-            ReleasedMddData::from_parser(mdd_data, synonym_data, &mdd_version, &release_date);
-        println!("MDD v{} data parsed successfully", mdd_version);
+        println!("MDD v{} data parsed successfully", self.get_version());
         println!("Total MDD records: {}", all_data.data.len());
         println!(
             "Total synonym only records: {}",
             all_data.synonym_only.len()
         );
-        let json = all_data.to_json();
-        fs::create_dir_all(self.output_path).unwrap_or_else(|_| {
-            panic!("Failed to create output directory: {:?}", self.output_path)
-        });
-        if self.plain_text {
-            self.write_plain_text(&json);
-            self.write_gzip(&json);
-            println!("Output written to: {:?}", self.get_output_path(false));
-        } else {
-            self.write_gzip(&json);
-        }
-
-        // Write country statistics to JSON file
-        country_stats.write_to_json_file(
-            &self
-                .output_path
-                .join(DEFAULT_COUNTRY_STATS_FNAME)
-                .with_extension(JSON_EXT),
-        );
-
-        CountryRegionCode::new().write_to_file(
-            &self
-                .output_path
-                .join(DEFAULT_COUNTRY_REGION_FNAME)
-                .with_extension(JSON_EXT),
-        );
+        all_data.to_json()
     }
 
     /// Returns the version of the MDD data.
@@ -218,6 +243,34 @@ impl<'a> JsonParser<'a> {
         std::fs::write(output, data).expect("Unable to write file");
     }
 
+    fn write_country_stats(&self, country_stats: &CountryStats) {
+        // Write country statistics to JSON file
+        country_stats.write_to_json_file(
+            &self
+                .output_path
+                .join(DEFAULT_COUNTRY_STATS_FNAME)
+                .with_extension(JSON_EXT),
+        );
+    }
+
+    fn write_country_code(&self) {
+        let country_region_code = CountryRegionCode::new();
+        country_region_code.write_to_file(
+            &self
+                .output_path
+                .join(DEFAULT_COUNTRY_REGION_FNAME)
+                .with_extension(JSON_EXT),
+        );
+    }
+
+    fn write_usa_stats(&self, usa_data: &str) {
+        let output = self
+            .output_path
+            .join(DEFAULT_USA_STATE_DATA_FNAME)
+            .with_extension(JSON_EXT);
+        std::fs::write(output, usa_data).expect("Unable to write file");
+    }
+
     /// Writes the given data to a gzip file.
     fn write_gzip(&self, data: &str) {
         let output = self.get_output_path(true);
@@ -238,5 +291,11 @@ impl<'a> JsonParser<'a> {
         } else {
             output.with_extension(JSON_EXT)
         }
+    }
+
+    fn create_dir_if_not_exist(&self) {
+        fs::create_dir_all(self.output_path).unwrap_or_else(|_| {
+            panic!("Failed to create output directory: {:?}", self.output_path)
+        });
     }
 }

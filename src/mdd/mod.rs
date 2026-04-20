@@ -17,6 +17,7 @@ pub mod country;
 pub mod metadata;
 pub mod species;
 pub mod synonyms;
+pub mod usa;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

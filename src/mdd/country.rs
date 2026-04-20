@@ -89,28 +89,11 @@ impl CountryStats {
     pub fn write_to_json_file(&self, file_path: &Path) {
         let json_data = self.to_json();
         std::fs::write(file_path, json_data).expect("Failed to write CountryMDDStats to JSON file");
-        // self.print_missing_country_codes();
     }
 
     fn to_json(&self) -> String {
         serde_json::to_string(self).expect("Failed to serialize CountryMDDStats")
     }
-
-    // // We use regex two uppercase letters to check country codes from country data.
-    // // If it does not match, we consider it a missing code.
-    // // and print it out.
-    // fn print_missing_country_codes(&self) {
-    //     let io = std::io::stdout();
-    //     let mut buff = BufWriter::new(io);
-    //     writeln!(buff, "Missing country codes:")
-    //         .expect("Failed to write missing country codes header");
-    //     self.country_data.keys().for_each(|country_code| {
-    //         let re = &COUNTRY_CODE_REGEX;
-    //         if !re.is_match(country_code) {
-    //             writeln!(buff, "{}", country_code).expect("Failed to write missing country code");
-    //         }
-    //     });
-    // }
 
     fn update_data(&mut self, records: &mut HashMap<String, CountryRecord>) {
         for (country_code, record) in records.iter_mut() {
