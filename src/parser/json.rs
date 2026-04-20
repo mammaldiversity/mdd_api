@@ -159,7 +159,6 @@ impl<'a> JsonParser<'a> {
     }
 
     fn parse_usa_data(&self, mdd_data: &[SpeciesData], country_stats: &CountryStats) -> String {
-        // Filter species that are present in the US.
         let species_list = country_stats.get_species_list_by_country("US");
         let usa_data: Vec<&SpeciesData> = mdd_data
             .iter()
@@ -168,7 +167,10 @@ impl<'a> JsonParser<'a> {
         let mut usa_stats = UsaStats::new();
         usa_stats.from_country_data(&usa_data);
         println!("USA data parsed successfully");
-        println!("Total USA state records: {}", usa_stats.total_states);
+        println!(
+            "Total USA state/territory records: {}",
+            usa_stats.total_states
+        );
         usa_stats.to_json()
     }
 
