@@ -161,6 +161,8 @@ impl<'a> JsonParser<'a> {
     fn parse_usa_data(&self, mdd_data: &[SpeciesData]) -> String {
         let mut usa_stats = UsaStats::new();
         usa_stats.from_country_data(mdd_data);
+        println!("USA data parsed successfully");
+        println!("Total USA state records: {}", usa_stats.total_states);
         usa_stats.to_json()
     }
 
