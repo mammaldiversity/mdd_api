@@ -22,12 +22,7 @@ impl UsaStats {
         let mut state_records: HashMap<String, StateRecord> = HashMap::new();
         for species in usa_data {
             let state_codes = self.parse_state_data(&species.subregion_distribution);
-            for state_code in state_codes {
-                let record = state_records
-                    .entry(state_code.clone())
-                    .or_insert_with(|| StateRecord::new(&state_code));
-                record.update(species);
-            }
+            self.update_state_record(&mut state_records, &state_codes, species);
         }
 
         self.state_data = state_records
@@ -53,9 +48,29 @@ impl UsaStats {
             states_str
                 .split(',')
                 .map(|s| s.trim().to_string())
+                .filter(|s| {
+                    let code = s.trim_end_matches('?');
+                    code.len() == 2 && code.chars().all(|c| c.is_ascii_uppercase())
+                })
                 .collect()
         } else {
             Vec::new()
+        }
+    }
+
+    fn update_state_record(
+        &self,
+        state_records: &mut HashMap<String, StateRecord>,
+        state_codes: &[String],
+        species: &SpeciesData,
+    ) {
+        for state_code in state_codes {
+            let predicted = state_code.ends_with("?");
+            let state_code = state_code.replace("?", "");
+            let record = state_records
+                .entry(state_code.to_string())
+                .or_insert_with(|| StateRecord::new(&state_code));
+            record.update(species, predicted);
         }
     }
 }
@@ -104,14 +119,24 @@ impl StateRecord {
         }
     }
 
-    fn update(&mut self, species: &SpeciesData) {
+    fn update(&mut self, species: &SpeciesData, predicted: bool) {
         self.orders.insert(species.taxon_order.clone());
         self.families.insert(species.family.clone());
         self.genera.insert(species.genus.clone());
-        if species.extinct == 1 {
-            self.extinct_species.insert(species.id.to_string());
+        self.add_species(species, predicted);
+    }
+
+    fn add_species(&mut self, species: &SpeciesData, predicted: bool) {
+        let species_id = if predicted {
+            format!("{}?", species.id)
         } else {
-            self.living_species.insert(species.id.to_string());
+            species.id.to_string()
+        };
+
+        if species.extinct == 1 {
+            self.extinct_species.insert(species_id);
+        } else {
+            self.living_species.insert(species_id);
         }
     }
 
@@ -142,6 +167,20 @@ mod tests {
             NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,\
             SD,TN,TX,UT,VT,VA,WA,WV,WI,WY)";
         let state_data = usa_stats.parse_state_data(state_str);
+        assert_eq!(state_data.len(), 50);
+    }
+
+    #[test]
+    fn test_parse_state_data_with_predicted() {
+        let usa_stats = UsaStats::new();
+        let state_str = "USA(AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,\
+            GA,ID,IL,IN,IA,KS,KY,LA,ME,MD?,\
+            MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,\
+            NM,NY,NC,ND?,OH,OK,OR,PA,RI,SC,\
+            SD,TN,TX,UT,VT,VA,WA,WV,WI,WY)";
+        let state_data = usa_stats.parse_state_data(state_str);
+        // Debug: print what was parsed
+        println!("Count: {}, States: {:?}", state_data.len(), state_data);
         assert_eq!(state_data.len(), 50);
     }
 }
