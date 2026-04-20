@@ -77,16 +77,18 @@ impl<'a> ZipParser<'a> {
         let mut archive = zip::ZipArchive::new(zip).expect("Failed to read zip file");
         // We extract the file for now to keep it simple.
         archive
-            .extract(&self.output_path)
+            .extract(self.output_path)
             .expect("Failed to extract zip file");
     }
 
     /// Finds the release.toml file in the extracted files.
     fn find_release_toml_file(&self, output_path: &Path) -> Option<PathBuf> {
-        for file in glob::glob(&format!("{}/**/release.toml", output_path.display())).unwrap() {
-            if let Ok(path) = file {
-                return Some(path);
-            }
+        if let Some(file) = glob::glob(&format!("{}/**/release.toml", output_path.display()))
+            .expect("Failed to find release.toml file")
+            .flatten()
+            .next()
+        {
+            return Some(file);
         }
         None
     }
@@ -124,6 +126,7 @@ impl<'a> ZipParser<'a> {
     }
 }
 
+#[derive(Debug, Default)]
 pub struct MddArchive {
     pub release_meta: Option<String>,
     pub species_data: Vec<SpeciesData>,
@@ -132,11 +135,7 @@ pub struct MddArchive {
 
 impl MddArchive {
     pub fn new() -> Self {
-        Self {
-            release_meta: None,
-            species_data: Vec::new(),
-            synonym_data: Vec::new(),
-        }
+        Self::default()
     }
 
     pub fn get_species_data(&mut self, zip_path: &Path) {
@@ -157,7 +156,6 @@ impl MddArchive {
 
     pub fn open_file(&self, zip_path: &Path) -> ZipArchive<File> {
         let file = File::open(zip_path).expect("Failed to open zip file");
-        let archive = zip::ZipArchive::new(file).expect("Failed to read zip file");
-        archive
+        zip::ZipArchive::new(file).expect("Failed to read zip file")
     }
 }

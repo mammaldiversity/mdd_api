@@ -50,7 +50,7 @@ impl<'a> FilterByCountry<'a> {
     pub fn filter(&self) {
         println!("Extracting archive from: {:?}", self.input_path);
 
-        let mut species_data = self.parse_species_data(&self.input_path);
+        let mut species_data = self.parse_species_data(self.input_path);
         let country_data = self.get_country_species_list(&species_data);
         self.filter_species_data_by_ids(&mut species_data, &country_data);
         self.write_filtered_data(&species_data);

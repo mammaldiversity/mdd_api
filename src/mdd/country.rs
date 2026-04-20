@@ -26,7 +26,7 @@ use crate::{
     mdd::species::SpeciesData,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CountryStats {
     /// Total number of countries / regions represented (size of `country_data`).
@@ -89,6 +89,11 @@ impl CountryStats {
     pub fn write_to_json_file(&self, file_path: &Path) {
         let json_data = self.to_json();
         std::fs::write(file_path, json_data).expect("Failed to write CountryMDDStats to JSON file");
+    }
+
+    pub fn get_species_list_by_country(&self, country_code: &str) -> Vec<String> {
+        let country_data = self.country_data.get(country_code);
+        country_data.map_or(Vec::new(), |country_data| country_data.species_list.clone())
     }
 
     fn to_json(&self) -> String {
@@ -169,7 +174,7 @@ impl CountryStats {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CountryData {
     pub name: String,

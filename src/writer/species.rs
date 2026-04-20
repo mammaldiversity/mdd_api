@@ -28,7 +28,7 @@ impl<'a> SpeciesWriter<'a> {
         &self,
         species_data: &[SpeciesData],
     ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        fs::create_dir_all(&self.output_dir)?;
+        fs::create_dir_all(self.output_dir)?;
         let output_path = self.create_output_path();
         match self.format {
             OutputFormat::Json => self.to_json(species_data, &output_path)?,
@@ -40,7 +40,7 @@ impl<'a> SpeciesWriter<'a> {
 
     fn create_output_path(&self) -> PathBuf {
         self.output_dir
-            .join(&self.output_filename)
+            .join(self.output_filename)
             .with_extension(self.format.to_str())
     }
 

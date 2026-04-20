@@ -421,12 +421,12 @@ lazy_static::lazy_static! {
 pub fn get_country_code(country_name: &str) -> String {
     // If not found, check the non-standard country map
     if let Some(code) = ALL_COUNTRY_REGION_MAP.get(country_name) {
-        return code.to_string();
+        code.to_string()
     } else {
         // If still not found, return the country name as is
         // This is useful for cases where the country name is not in the list
         // and we want to keep it as a fallback.
-        return country_name.to_string();
+        country_name.to_string()
     }
 }
 
@@ -445,7 +445,7 @@ fn get_country_region_map() -> &'static HashMap<String, String> {
     &ALL_COUNTRY_REGION_MAP
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CountryRegionCode {
     pub region_to_code: HashMap<String, String>,

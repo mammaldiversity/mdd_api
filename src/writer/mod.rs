@@ -46,7 +46,7 @@ pub struct AllMddWriter<'a> {
 
 impl Writer for AllMddWriter<'_> {
     fn write(&self, json_data: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        fs::create_dir_all(&self.output_dir)?;
+        fs::create_dir_all(self.output_dir)?;
         // Replace taxonOrder with order to avoid conflict with parser.
         let data = json_data.replace("taxonOrder", "order");
         let output_path = self.create_output_path();
@@ -61,7 +61,7 @@ impl Writer for AllMddWriter<'_> {
     fn create_output_path(&self) -> PathBuf {
         let extension = self.get_extension();
         self.output_dir
-            .join(&self.output_filename)
+            .join(self.output_filename)
             .with_extension(extension)
     }
 
@@ -102,7 +102,7 @@ impl<'a> AllMddWriter<'a> {
         output_path: &Path,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut wtr = csv::Writer::from_path(output_path)?;
-        let records: AllMddData = serde_json::from_str(&json_data)?;
+        let records: AllMddData = serde_json::from_str(json_data)?;
         let data = records.get_mdd_data();
         for record in data {
             wtr.serialize(record)?;
@@ -130,7 +130,7 @@ pub struct MddWriter<'a> {
 
 impl Writer for MddWriter<'_> {
     fn write(&self, json_data: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        fs::create_dir_all(&self.output_dir)?;
+        fs::create_dir_all(self.output_dir)?;
         let output_path = self.create_output_path();
         // Replace taxonOrder with order to avoid conflict with parser.
         let data = json_data.replace("taxonOrder", "order");
@@ -145,7 +145,7 @@ impl Writer for MddWriter<'_> {
     fn create_output_path(&self) -> PathBuf {
         let extension = self.get_extension();
         self.output_dir
-            .join(&self.output_filename)
+            .join(self.output_filename)
             .with_extension(extension)
     }
 
@@ -170,12 +170,12 @@ impl<'a> MddWriter<'a> {
 
     /// Persist provided JSON (array of `MddData`) to disk in JSON or CSV form.
     pub fn write(&self, json_data: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
-        fs::create_dir_all(&self.output_dir)?;
+        fs::create_dir_all(self.output_dir)?;
         let output_path = self.create_output_path();
         if self.to_csv {
-            self.to_csv(&json_data, &output_path)?;
+            self.to_csv(json_data, &output_path)?;
         } else {
-            self.to_json(&json_data, &output_path)?;
+            self.to_json(json_data, &output_path)?;
         }
         Ok(output_path)
     }
@@ -186,7 +186,7 @@ impl<'a> MddWriter<'a> {
         output_path: &Path,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut wtr = csv::Writer::from_path(output_path)?;
-        let records: Vec<SpeciesData> = serde_json::from_str(&json_data)?;
+        let records: Vec<SpeciesData> = serde_json::from_str(json_data)?;
         for record in records {
             wtr.serialize(record)?;
         }
@@ -206,7 +206,7 @@ impl<'a> MddWriter<'a> {
     fn create_output_path(&self) -> PathBuf {
         let extension = self.get_extension();
         self.output_dir
-            .join(&self.output_filename)
+            .join(self.output_filename)
             .with_extension(extension)
     }
 

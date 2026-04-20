@@ -18,15 +18,9 @@ impl UsaStats {
         Self::default()
     }
 
-    pub fn from_country_data(&mut self, mdd_data: &[SpeciesData]) {
-        // Filter species that are present in the US.
-        let usa_species: Vec<&SpeciesData> = mdd_data
-            .iter()
-            .filter(|species| species.country_distribution.contains("USA"))
-            .collect();
-
+    pub fn from_country_data(&mut self, usa_data: &[&SpeciesData]) {
         let mut state_records: HashMap<String, StateRecord> = HashMap::new();
-        for species in usa_species {
+        for species in usa_data {
             let state_codes = self.parse_state_data(&species.subregion_distribution);
             for state_code in state_codes {
                 let record = state_records
@@ -36,7 +30,6 @@ impl UsaStats {
             }
         }
 
-        // Convert state records to UsaStateData.
         self.state_data = state_records
             .into_iter()
             .map(|(state_code, record)| (state_code, record.to_usa_state_data()))
@@ -57,7 +50,10 @@ impl UsaStats {
         let caps = STATE_DIST_RE.captures(subregion_dist);
         if let Some(caps) = caps {
             let states_str = caps.get(1).unwrap().as_str();
-            states_str.split(',').map(|s| s.to_string()).collect()
+            states_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
         } else {
             Vec::new()
         }
@@ -139,7 +135,13 @@ mod tests {
     #[test]
     fn test_parse_state_data() {
         let usa_stats = UsaStats::new();
-        let state_data = usa_stats.parse_state_data("USA(AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY)");
+        let state_str = "USA(\
+            AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,\
+            GA,ID,IL,IN,IA,KS,KY,LA,ME,MD,\
+            MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,\
+            NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,\
+            SD,TN,TX,UT,VT,VA,WA,WV,WI,WY)";
+        let state_data = usa_stats.parse_state_data(state_str);
         assert_eq!(state_data.len(), 50);
     }
 }

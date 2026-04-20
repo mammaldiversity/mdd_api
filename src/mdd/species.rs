@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 ///   to match the CSV and avoid custom (de)serialization.
 /// * Coordinate and locality fields remain textual because the source may
 ///   contain composite, approximate, or blank entries.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SpeciesData {
     /// Unique numeric identifier for the species record (MDD internal ID).

@@ -89,17 +89,17 @@ impl<'a> JsonParser<'a> {
         let mut mdd_data = self.parse_mdd_data();
         let mut synonym_data = self.parse_synonym_data();
         // State-level data for USA
-        let usa_data = self.parse_usa_data(&mdd_data);
 
         if synonym_data.is_empty() {
             println!("No synonym data found");
         }
 
         let country_stats = self.parse_country_stats(&mdd_data);
+        let usa_data = self.parse_usa_data(&mdd_data, &country_stats);
 
-        if self.limit.is_some() {
-            self.limit_mdd_data(&mut mdd_data, self.limit.unwrap());
-            self.limit_synonym_data(&mut synonym_data, self.limit.unwrap());
+        if let Some(limit) = self.limit {
+            self.limit_mdd_data(&mut mdd_data, limit);
+            self.limit_synonym_data(&mut synonym_data, limit);
         }
 
         let mdd_version = self.get_version();
@@ -148,7 +148,7 @@ impl<'a> JsonParser<'a> {
     fn parse_country_stats(&self, mdd_data: &[SpeciesData]) -> CountryStats {
         println!("Creating country mammal diversity statistics from MDD records");
         let mut country_stats = CountryStats::new();
-        country_stats.parse_country_data(&mdd_data);
+        country_stats.parse_country_data(mdd_data);
         println!(
             "Total countries and regions: {}, Total domesticated species: {}, Total widespread species: {}",
             country_stats.total_countries,
@@ -158,9 +158,15 @@ impl<'a> JsonParser<'a> {
         country_stats
     }
 
-    fn parse_usa_data(&self, mdd_data: &[SpeciesData]) -> String {
+    fn parse_usa_data(&self, mdd_data: &[SpeciesData], country_stats: &CountryStats) -> String {
+        // Filter species that are present in the US.
+        let species_list = country_stats.get_species_list_by_country("US");
+        let usa_data: Vec<&SpeciesData> = mdd_data
+            .iter()
+            .filter(|species| species_list.contains(&species.id.to_string()))
+            .collect();
         let mut usa_stats = UsaStats::new();
-        usa_stats.from_country_data(mdd_data);
+        usa_stats.from_country_data(&usa_data);
         println!("USA data parsed successfully");
         println!("Total USA state records: {}", usa_stats.total_states);
         usa_stats.to_json()
@@ -258,8 +264,7 @@ impl<'a> JsonParser<'a> {
     fn write_country_code(&self) {
         let country_region_code = CountryRegionCode::new();
         country_region_code.write_to_file(
-            &self
-                .output_path
+            self.output_path
                 .join(DEFAULT_COUNTRY_REGION_FNAME)
                 .with_extension(JSON_EXT),
         );

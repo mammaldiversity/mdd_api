@@ -10,16 +10,6 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
-    pub fn from_str(format: &str) -> Self {
-        match format.to_lowercase().as_str() {
-            "json" => OutputFormat::Json,
-            "csv" => OutputFormat::Csv,
-            "json.gz" | "json_gz" | "gzip_json" | "gzip.json" => OutputFormat::JsonGz,
-            "csv.gz" | "csv_gz" | "gzip_csv" | "gzip.csv" => OutputFormat::CsvGz,
-            _ => panic!("Unsupported output format: {}", format),
-        }
-    }
-
     pub fn to_str(&self) -> &str {
         match self {
             OutputFormat::Json => "json",
@@ -34,6 +24,12 @@ impl FromStr for OutputFormat {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(OutputFormat::from_str(s))
+        match s.to_lowercase().as_str() {
+            "json" => Ok(OutputFormat::Json),
+            "csv" => Ok(OutputFormat::Csv),
+            "json.gz" | "json_gz" | "gzip_json" | "gzip.json" => Ok(OutputFormat::JsonGz),
+            "csv.gz" | "csv_gz" | "gzip_csv" | "gzip.csv" => Ok(OutputFormat::CsvGz),
+            _ => Err(()),
+        }
     }
 }
