@@ -181,7 +181,7 @@ impl<'a> JsonParser<'a> {
             &self.get_version(),
             &self.get_release_date(),
         );
-        println!("MDD v{} data parsed successfully", self.get_version());
+        println!("MDD {} data parsed successfully", self.get_version());
         println!("Total MDD records: {}", all_data.data.len());
         println!(
             "Total synonym only records: {}",
