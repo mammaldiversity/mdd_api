@@ -106,7 +106,7 @@ impl<'a> JsonParser<'a> {
         let release_date = self.get_release_date();
 
         println!(
-            "Using MDD version: {}, release date: {}",
+            "\nUsing MDD version: {}, release date: {}\n",
             mdd_version, release_date
         );
 

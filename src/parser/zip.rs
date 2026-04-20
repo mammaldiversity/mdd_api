@@ -36,21 +36,19 @@ impl<'a> ZipParser<'a> {
                 .to_str()
                 .expect("Failed to convert Path to str")
         ));
-        println!("Finding MDD and synonym files...");
         let files = match glob_files {
             Ok(files) => files.filter_map(Result::ok).collect::<Vec<PathBuf>>(),
             Err(e) => panic!("Failed to find MDD files with pattern: {}", e),
         };
         println!("Found {} MDD files.", files.len());
-        println!("Finding release.toml file...");
         let meta_path = self.find_release_toml_file(self.output_path);
         let meta = if let Some(meta_path) = meta_path {
             let metadata =
                 ReleaseToml::from_file(&meta_path).expect("Failed to read release.toml file");
-            println!("Found release.toml file.");
+            println!("Found release.toml file.\n");
             Some(metadata)
         } else {
-            println!("No release.toml file found. Using default metadata.");
+            println!("No release.toml file found. Using default metadata.\n");
             None
         };
 
