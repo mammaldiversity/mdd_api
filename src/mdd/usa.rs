@@ -131,3 +131,15 @@ impl StateRecord {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_state_data() {
+        let usa_stats = UsaStats::new();
+        let state_data = usa_stats.parse_state_data("USA(AL,AK,AZ,AR,CA,CO,CT,DE,DC,FL,GA,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY)");
+        assert_eq!(state_data.len(), 50);
+    }
+}
