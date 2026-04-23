@@ -1,6 +1,6 @@
 [package]
 name = "mdd_api"
-version = "0.8.0"
+version = "0.7.0"
 edition = "2024"
 repository = "https://github.com/mammaldiversity/mdd_app"
 authors = ["Heru Handika <herubiolog@gmail.com>"]
@@ -10,7 +10,6 @@ readme = "README.md"
 description = "Rust API for the Mammal Diversity Database"
 keywords = ["utility", "biodiversity"]
 categories = ["command-line-utilities", "science"]
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 chrono = "0.4.41"
