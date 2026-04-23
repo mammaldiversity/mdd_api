@@ -2,6 +2,10 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.8.0] - 2026-04-23
+
+- Added: Support for parsing state-level distribution for the United States.
+
 ## [0.7.0] - 2025-09-30
 
 - Added: CLI subcommand `unpack` to extract and parse MDD zip files directly.
