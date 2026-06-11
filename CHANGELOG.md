@@ -2,6 +2,10 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.8.1] - 2026-06-11
+
+- Fix: MIL JSON file name in `prepare` subcommand.
+
 ## [0.8.0] - 2026-06-11
 
 - New feature: MIL data preparation and merging with MDD records.
