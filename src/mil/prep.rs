@@ -398,7 +398,6 @@ impl<'a> MilParser<'a> {
     fn to_camel(&self, col: &str) -> String {
         let col = col.trim().replace('#', "No");
 
-        // Remove non-word/non-space chars
         let cleaned: String = col
             .chars()
             .filter(|c| c.is_alphanumeric() || *c == '_' || c.is_whitespace())
@@ -627,9 +626,7 @@ mod tests {
         // 4. Run prepare_metadata
         let output_json = tmp.path().join("output.json");
         let parser = MilParser::new(&mil_path, &mdd_path, Some(&img_dir), &output_json);
-        parser
-            .prepare_metadata()
-            .unwrap();
+        parser.prepare_metadata().unwrap();
 
         // 5. Read output and verify
         let content = fs::read_to_string(&output_json).unwrap();
