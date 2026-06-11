@@ -2,7 +2,9 @@ pub mod args;
 
 use clap::Parser;
 
-use crate::{filter::country::FilterByCountry, parser::zip::ZipParser};
+use crate::{filter::country::FilterByCountry, mil::prep::MilParser, parser::zip::ZipParser};
+
+const DEFAULT_MIL_JSON: &str = "mil.json";
 
 pub fn parse_args() {
     let cli = args::Cli::parse();
@@ -16,12 +18,13 @@ pub fn parse_args() {
             }
         },
         args::Cli::Mil(args) => {
-            if let Err(e) = crate::mil::prepare_metadata(
+            let parser = MilParser::new(
                 &args.mil_file,
                 &args.mdd_file,
                 args.mil_img_dir.as_deref(),
                 &args.output,
-            ) {
+            );
+            if let Err(e) = parser.prepare_metadata() {
                 eprintln!("Error preparing MIL metadata: {:?}", e);
                 std::process::exit(1);
             }
@@ -29,16 +32,16 @@ pub fn parse_args() {
         args::Cli::Prepare(args) => {
             // First run standard unpack to extract MDD files and produce standard JSONs
             println!("Unpacking MDD archive...");
-            let unpack_args = crate::cli::args::UnpackArgs {
-                input: crate::cli::args::CommonInput {
+            let unpack_args = args::UnpackArgs {
+                input: args::CommonInput {
                     input: args.mdd_zip.clone(),
                     format: "zip".to_string(),
                 },
                 mdd_version: None,
                 release_date: None,
-                output: crate::cli::args::CommonOutput {
+                output: args::CommonOutput {
                     output: args.output.clone(),
-                    output_format: crate::helper::types::OutputFormat::Json,
+                    output_format: args::OutputFormat::Json,
                     limit: None,
                     prefix: None,
                 },
@@ -54,13 +57,14 @@ pub fn parse_args() {
                 .expect("Failed to locate unpacked MDD species CSV file");
 
             println!("Running MIL data preparation...");
-            let output_json = args.output.join("mil_mdd.json");
-            if let Err(e) = crate::mil::prepare_metadata(
+            let output_json = args.output.join(DEFAULT_MIL_JSON);
+            let parser = MilParser::new(
                 &args.mil_file,
                 &mdd_file,
                 args.mil_img_dir.as_deref(),
                 &output_json,
-            ) {
+            );
+            if let Err(e) = parser.prepare_metadata() {
                 eprintln!("Error preparing MIL metadata: {:?}", e);
                 std::process::exit(1);
             }

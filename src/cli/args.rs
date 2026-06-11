@@ -17,7 +17,7 @@ use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, crate_authors, crate_description, crate_name, crate_version};
 
-use crate::helper::types::OutputFormat;
+pub use crate::helper::types::OutputFormat;
 
 /// Top-level CLI dispatcher enumerating supported subcommands.
 #[derive(Parser)]
@@ -116,7 +116,11 @@ pub struct CommonInput {
 #[derive(Args)]
 pub struct MilArgs {
     /// Path to the MIL metadata file (CSV or Excel) or compressed archive (.tar.gz / .zip)
-    #[arg(long, short = 'm', help = "Path to the MIL metadata file or compressed archive")]
+    #[arg(
+        long,
+        short = 'm',
+        help = "Path to the MIL metadata file or compressed archive"
+    )]
     pub mil_file: PathBuf,
 
     /// Path to the MDD metadata file (CSV or Excel)
@@ -140,7 +144,11 @@ pub struct PrepareArgs {
     pub mdd_zip: PathBuf,
 
     /// Path to the MIL metadata file (CSV or Excel) or compressed archive (.tar.gz / .zip)
-    #[arg(long, short = 'm', help = "Path to the MIL metadata file or compressed archive")]
+    #[arg(
+        long,
+        short = 'm',
+        help = "Path to the MIL metadata file or compressed archive"
+    )]
     pub mil_file: PathBuf,
 
     /// Path to the MIL image directory (optional if compressed archive is provided)

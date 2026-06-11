@@ -9,7 +9,7 @@ use tempdir::TempDir;
 use zip::ZipWriter;
 use zip::write::FileOptions;
 
-use mdd_api::mil::MilMddRecord;
+use mdd_api::mil::prep::MilMetadata;
 
 /// Creates a mock MIL metadata CSV content.
 fn get_mock_mil_csv() -> &'static str {
@@ -149,7 +149,7 @@ fn test_cli_mil_subcommand() {
 
     // Verify output file content
     let content = fs::read_to_string(&output_json).expect("Failed to read output JSON");
-    let records: Vec<MilMddRecord> =
+    let records: Vec<MilMetadata> =
         serde_json::from_str(&content).expect("Failed to deserialize output JSON");
 
     assert_eq!(records.len(), 2);
@@ -197,14 +197,14 @@ fn test_cli_prepare_subcommand_compressed() {
     assert!(status.success(), "CLI command 'prepare' failed");
 
     // Verify prepared MIL-MDD JSON file is created
-    let prepared_json_path = output_dir.join("mil_mdd.json");
+    let prepared_json_path = output_dir.join("mil.json");
     assert!(
         prepared_json_path.exists(),
         "Prepared MIL JSON does not exist"
     );
 
     let content = fs::read_to_string(&prepared_json_path).expect("Failed to read prepared JSON");
-    let records: Vec<MilMddRecord> =
+    let records: Vec<MilMetadata> =
         serde_json::from_str(&content).expect("Failed to deserialize prepared JSON");
 
     assert_eq!(records.len(), 2);

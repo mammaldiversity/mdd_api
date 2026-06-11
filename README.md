@@ -83,6 +83,7 @@ Use the `filter country` subcommand to extract species by country code from an M
 ```powershell
 # Filter species by country (e.g., Indonesia) and output JSON to ./out
 mdd filter country -i MDD.zip -c ID -o ./out/indonesia
+```
 
 #### MIL Data Preparation
 
