@@ -2,6 +2,12 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.8.0] - 2026-06-11
+
+- New feature: MIL data preparation and merging with MDD records.
+- Added: CLI subcommand `mil` to parse and merge MIL data with MDD records.
+- Added: CLI subcommand `prepare` to unpack MDD zip files and prepare MIL data in one step.
+
 ## [0.7.0] - 2025-09-30
 
 - Added: CLI subcommand `unpack` to extract and parse MDD zip files directly.
