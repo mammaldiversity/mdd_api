@@ -83,6 +83,28 @@ Use the `filter country` subcommand to extract species by country code from an M
 ```powershell
 # Filter species by country (e.g., Indonesia) and output JSON to ./out
 mdd filter country -i MDD.zip -c ID -o ./out/indonesia
+
+#### MIL Data Preparation
+
+You can prepare Mammal Image Library (MIL) metadata and merge it with MDD records. The input MIL metadata file can be in CSV or Excel format, or it can be a compressed archive (`.zip` or `.tar.gz`) containing both the metadata and the images.
+
+```powershell
+# Parse MIL and merge with MDD; outputs JSON
+mdd mil --mil-file mil_metadata.xlsx --mdd-file MDD.csv --mil-img-dir ./images --output ./output.json
+
+# Parse directly from a compressed MIL release archive (.tar.gz or .zip)
+# (automatically extracts metadata and images from the archive)
+mdd mil --mil-file mil-v2026-04-30.tar.gz --mdd-file MDD.csv --output ./output.json
+```
+
+#### Combined Unpack & Prepare
+
+Use the `prepare` subcommand to unpack a raw MDD release zip archive (generating the standard MDD JSON files) and then prepare the MIL data using the unpacked MDD species CSV in one step.
+
+```powershell
+# Unpack MDD zip, parse MIL (csv/xlsx/archive), and output both to ./out directory
+# (generates mil_mdd.json under the output directory)
+mdd prepare --mdd-zip MDD.zip --mil-file mil-v2026-04-30.tar.gz --output ./out
 ```
 
 ### Library Usage

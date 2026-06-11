@@ -31,6 +31,10 @@ pub enum Cli {
         about = "Filter MDD data by country codes"
     )]
     Filter(FilterSubcommand),
+    #[command(name = "mil", about = "Merge MIL and MDD metadata and export as JSON")]
+    Mil(MilArgs),
+    #[command(name = "prepare", about = "Unpack MDD data and prepare MIL metadata")]
+    Prepare(PrepareArgs),
 }
 
 #[derive(Subcommand)]
@@ -104,6 +108,46 @@ pub struct CommonInput {
     )]
     pub input: PathBuf,
     /// File format to export (json, db, toml, etc).
-    #[arg(long, short, default_value = "zip", help = "Output format")]
+    #[arg(long, short = 'f', default_value = "zip", help = "Output format")]
     pub format: String,
+}
+
+/// Arguments for the `mil` subcommand.
+#[derive(Args)]
+pub struct MilArgs {
+    /// Path to the MIL metadata file (CSV or Excel) or compressed archive (.tar.gz / .zip)
+    #[arg(long, short = 'm', help = "Path to the MIL metadata file or compressed archive")]
+    pub mil_file: PathBuf,
+
+    /// Path to the MDD metadata file (CSV or Excel)
+    #[arg(long, short = 'd', help = "Path to the MDD metadata file")]
+    pub mdd_file: PathBuf,
+
+    /// Path to the MIL image directory (optional if compressed archive is provided)
+    #[arg(long, short = 'i', help = "Path to the MIL image directory")]
+    pub mil_img_dir: Option<PathBuf>,
+
+    /// Output path for the exported JSON file
+    #[arg(long, short = 'o', help = "Output path for the exported JSON file")]
+    pub output: PathBuf,
+}
+
+/// Arguments for the `prepare` subcommand.
+#[derive(Args)]
+pub struct PrepareArgs {
+    /// Path to the MDD zip archive
+    #[arg(long, short = 'z', help = "Path to the MDD zip archive")]
+    pub mdd_zip: PathBuf,
+
+    /// Path to the MIL metadata file (CSV or Excel) or compressed archive (.tar.gz / .zip)
+    #[arg(long, short = 'm', help = "Path to the MIL metadata file or compressed archive")]
+    pub mil_file: PathBuf,
+
+    /// Path to the MIL image directory (optional if compressed archive is provided)
+    #[arg(long, short = 'i', help = "Path to the MIL image directory")]
+    pub mil_img_dir: Option<PathBuf>,
+
+    /// Output directory for MDD unpacked files and prepared MIL JSON
+    #[arg(long, short = 'o', help = "Output directory")]
+    pub output: PathBuf,
 }

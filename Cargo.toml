@@ -25,6 +25,9 @@ serde_json = "1.0.117"
 tempdir = "0.3.7"
 toml = "0.9.5"
 zip = "5.*"
+calamine = "0.26.1"
+tar = "0.4.43"
+imagesize = "0.14.0"
 
 [[bin]]
 name = "mdd"
