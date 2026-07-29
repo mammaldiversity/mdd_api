@@ -53,7 +53,9 @@ impl<'a> ZipParser<'a> {
         };
 
         let mdd_file = self.find_mdd_file(&files);
+        println!("Found MDD file: {:?}", mdd_file);
         let syn_file = self.find_synonym_file(&files);
+        println!("Found synonym file: {:?}", syn_file);
         if mdd_file.is_none() || syn_file.is_none() {
             panic!("MDD or synonym file not found in the zip archive. Please check the zip file.");
         }
@@ -110,12 +112,13 @@ impl<'a> ZipParser<'a> {
     /// Finds the synonym file in the extracted files.
     fn find_synonym_file(&self, files: &[PathBuf]) -> Option<PathBuf> {
         for file in files {
-            if file
+            let file_name = file
                 .file_name()
                 .expect("Failed to get file name")
                 .to_str()
-                .expect("Failed to convert OsStr to str")
-                .starts_with("Species_Syn_v")
+                .expect("Failed to convert OsStr to str");
+            if file_name.starts_with("Species_Syn_v")
+                || file_name.starts_with("Species_Syn_Current_v")
             {
                 return Some(file.to_path_buf());
             }
@@ -155,5 +158,31 @@ impl MddArchive {
     pub fn open_file(&self, zip_path: &Path) -> ZipArchive<File> {
         let file = File::open(zip_path).expect("Failed to open zip file");
         zip::ZipArchive::new(file).expect("Failed to read zip file")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_synonym_file() {
+        let parser = ZipParser {
+            input_path: Path::new("dummy.zip"),
+            output_path: Path::new("dummy_out"),
+        };
+
+        let files1 = vec![PathBuf::from("/tmp/MDD/Species_Syn_v2.2.csv")];
+        let files2 = vec![PathBuf::from("/tmp/MDD/Species_Syn_Current_v2.5.csv")];
+
+        assert_eq!(
+            parser.find_synonym_file(&files1),
+            Some(PathBuf::from("/tmp/MDD/Species_Syn_v2.2.csv"))
+        );
+
+        assert_eq!(
+            parser.find_synonym_file(&files2),
+            Some(PathBuf::from("/tmp/MDD/Species_Syn_Current_v2.5.csv"))
+        );
     }
 }
