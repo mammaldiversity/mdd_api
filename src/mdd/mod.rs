@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use species::SpeciesData;
 use synonyms::SynonymData;
 
+use crate::mdd::metadata::ReleaseMetadata;
+
 pub mod country;
 pub mod metadata;
 pub mod species;
@@ -123,6 +125,8 @@ impl SimpleMDD {
 pub struct Metadata {
     version: String,
     release_date: String,
+    remarks: String,
+    doi: String,
     species_count: u32,
     synonym_count: u32,
     recently_extinct: u32,
@@ -148,15 +152,12 @@ impl Metadata {
             genus_count: 0,
             family_count: 0,
             order_count: 0,
+            remarks: "".to_string(),
+            doi: "".to_string(),
         }
     }
 
-    fn from_mdd(
-        data: &[SpeciesData],
-        synonyms: &[SynonymData],
-        version: &str,
-        release_date: &str,
-    ) -> Self {
+    fn from_mdd(data: &[SpeciesData], synonyms: &[SynonymData], metadata: ReleaseMetadata) -> Self {
         let species_count = data.len() as u32;
         let synonym_count = synonyms.len() as u32;
         let recently_extinct = data.iter().filter(|d| d.extinct == 1).count() as u32;
@@ -178,10 +179,22 @@ impl Metadata {
             .map(|d| d.taxon_order.clone())
             .collect::<std::collections::HashSet<_>>()
             .len() as u32;
+        let version = metadata.version.to_string();
+        let release_date = metadata.release_date.to_string();
+        let remarks = match metadata.remarks {
+            Some(r) => r,
+            None => "".to_string(),
+        };
+        let doi = match metadata.doi {
+            Some(d) => d,
+            None => "".to_string(),
+        };
 
         Self {
             version: version.to_string(),
             release_date: release_date.to_string(),
+            remarks: remarks,
+            doi: doi,
             species_count,
             synonym_count,
             recently_extinct,
