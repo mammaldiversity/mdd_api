@@ -2,6 +2,14 @@
 
 > NOTE: Early version history (<= 0.3.x) reconstructed retroactively from commit messages; some granular changes may be grouped.
 
+## [0.9.0] - 2026-08-1
+
+- Added: Add remarks and doi in the output MDD release data.
+
+## [0.8.2] - 2026-07-28
+
+- Fix: Capture other versions of synonym filenames.
+
 ## [0.8.1] - 2026-06-11
 
 - Fix: MIL JSON file name in `prepare` subcommand.
