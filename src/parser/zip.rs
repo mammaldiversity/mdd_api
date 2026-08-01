@@ -66,7 +66,7 @@ impl<'a> ZipParser<'a> {
             self.output_path,
         );
         if let Some(meta) = meta {
-            json_parser.update_release_data(&meta.metadata.release_date, &meta.metadata.version);
+            json_parser.set_metadata(meta.metadata);
         }
         json_parser.parse_to_json();
     }

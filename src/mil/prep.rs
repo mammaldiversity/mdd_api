@@ -113,7 +113,9 @@ impl<'a> MilParser<'a> {
             return Ok((metadata_path, img_dir_path));
         }
 
-        let img_dir = self.mil_img_dir.ok_or("MIL image directory is required when the MIL file is not a compressed archive.")?;
+        let img_dir = self.mil_img_dir.ok_or(
+            "MIL image directory is required when the MIL file is not a compressed archive.",
+        )?;
         Ok((self.mil_file.to_path_buf(), img_dir.to_path_buf()))
     }
 
@@ -122,10 +124,11 @@ impl<'a> MilParser<'a> {
         for rec in mdd_records {
             if let (Some(id_str), Some(genus), Some(epithet)) =
                 (rec.get("id"), rec.get("genus"), rec.get("specificEpithet"))
-                && let Ok(id) = id_str.parse::<u32>() {
-                    let name = format!("{}_{}", genus, epithet);
-                    map.insert(name, id);
-                }
+                && let Ok(id) = id_str.parse::<u32>()
+            {
+                let name = format!("{}_{}", genus, epithet);
+                map.insert(name, id);
+            }
         }
         map
     }
@@ -404,10 +407,9 @@ impl<'a> MilParser<'a> {
         let chars: Vec<char> = cleaned.chars().collect();
         for i in 0..chars.len() {
             spaced.push(chars[i]);
-            if i + 1 < chars.len()
-                && chars[i].is_lowercase() && chars[i + 1].is_uppercase() {
-                    spaced.push(' ');
-                }
+            if i + 1 < chars.len() && chars[i].is_lowercase() && chars[i + 1].is_uppercase() {
+                spaced.push(' ');
+            }
         }
 
         let words: Vec<&str> = spaced.split_whitespace().collect();
@@ -488,12 +490,13 @@ impl<'a> MilParser<'a> {
                     return Some(found);
                 }
             } else if p.is_file()
-                && let Some(ext) = p.extension() {
-                    let ext_lower = ext.to_string_lossy().to_lowercase();
-                    if Self::is_supported_image_ext(&ext_lower) {
-                        return Some(path.to_path_buf());
-                    }
+                && let Some(ext) = p.extension()
+            {
+                let ext_lower = ext.to_string_lossy().to_lowercase();
+                if Self::is_supported_image_ext(&ext_lower) {
+                    return Some(path.to_path_buf());
                 }
+            }
         }
         None
     }

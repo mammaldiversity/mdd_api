@@ -50,19 +50,16 @@ impl ReleasedMddData {
     pub fn from_parser(
         mdd_data: Vec<SpeciesData>,
         synonym_data: Vec<SynonymData>,
-        version: &str,
-        release_date: &str,
+        metadata: &ReleaseMetadata,
     ) -> Self {
-        let mut simple_mdd = Vec::new();
-        // Get the synonyms that have no species id
         let synonym_only: Vec<SynonymData> = synonym_data
             .iter()
             .filter(|s| s.species_id.is_none())
             .cloned()
             .collect();
 
-        // iter over the mdd data and get all the synonyms that match the species id
-        let metadata = Metadata::from_mdd(&mdd_data, &synonym_data, version, release_date);
+        let metadata_struct = Metadata::from_mdd(&mdd_data, &synonym_data, metadata);
+        let mut simple_mdd = Vec::with_capacity(mdd_data.len());
         for mdd in mdd_data {
             let synonyms: Vec<SynonymData> = synonym_data
                 .iter()
@@ -75,7 +72,7 @@ impl ReleasedMddData {
         Self {
             data: simple_mdd,
             synonym_only,
-            metadata,
+            metadata: metadata_struct,
         }
     }
 
@@ -95,6 +92,14 @@ impl ReleasedMddData {
 
     pub fn get_release_date(&self) -> &str {
         &self.metadata.release_date
+    }
+
+    pub fn get_remarks(&self) -> Option<&str> {
+        self.metadata.get_remarks()
+    }
+
+    pub fn get_doi(&self) -> Option<&str> {
+        self.metadata.get_doi()
     }
 }
 
@@ -123,26 +128,30 @@ impl SimpleMDD {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
-    version: String,
-    release_date: String,
-    remarks: String,
-    doi: String,
-    species_count: u32,
-    synonym_count: u32,
-    recently_extinct: u32,
-    living: u32,
-    domestic: u32,
-    living_wild: u32,
-    genus_count: u32,
-    family_count: u32,
-    order_count: u32,
+    pub version: String,
+    pub release_date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remarks: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    pub species_count: u32,
+    pub synonym_count: u32,
+    pub recently_extinct: u32,
+    pub living: u32,
+    pub domestic: u32,
+    pub living_wild: u32,
+    pub genus_count: u32,
+    pub family_count: u32,
+    pub order_count: u32,
 }
 
 impl Metadata {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             version: "".to_string(),
             release_date: "".to_string(),
+            remarks: None,
+            doi: None,
             species_count: 0,
             synonym_count: 0,
             recently_extinct: 0,
@@ -152,12 +161,14 @@ impl Metadata {
             genus_count: 0,
             family_count: 0,
             order_count: 0,
-            remarks: "".to_string(),
-            doi: "".to_string(),
         }
     }
 
-    fn from_mdd(data: &[SpeciesData], synonyms: &[SynonymData], metadata: ReleaseMetadata) -> Self {
+    pub fn from_mdd(
+        data: &[SpeciesData],
+        synonyms: &[SynonymData],
+        metadata: &ReleaseMetadata,
+    ) -> Self {
         let species_count = data.len() as u32;
         let synonym_count = synonyms.len() as u32;
         let recently_extinct = data.iter().filter(|d| d.extinct == 1).count() as u32;
@@ -179,22 +190,16 @@ impl Metadata {
             .map(|d| d.taxon_order.clone())
             .collect::<std::collections::HashSet<_>>()
             .len() as u32;
-        let version = metadata.version.to_string();
-        let release_date = metadata.release_date.to_string();
-        let remarks = match metadata.remarks {
-            Some(r) => r,
-            None => "".to_string(),
-        };
-        let doi = match metadata.doi {
-            Some(d) => d,
-            None => "".to_string(),
-        };
+        let version = metadata.version.clone();
+        let release_date = metadata.release_date.clone();
+        let remarks = metadata.remarks.clone();
+        let doi = metadata.doi.clone();
 
         Self {
-            version: version.to_string(),
-            release_date: release_date.to_string(),
-            remarks: remarks,
-            doi: doi,
+            version,
+            release_date,
+            remarks,
+            doi,
             species_count,
             synonym_count,
             recently_extinct,
@@ -206,15 +211,27 @@ impl Metadata {
             order_count,
         }
     }
+
+    pub fn get_remarks(&self) -> Option<&str> {
+        self.remarks.as_deref()
+    }
+
+    pub fn get_doi(&self) -> Option<&str> {
+        self.doi.as_deref()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AllMddData {
-    version: String,
-    release_date: String,
-    data: Vec<SpeciesData>,
-    synonyms: Vec<SynonymData>,
+    pub version: String,
+    pub release_date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remarks: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    pub data: Vec<SpeciesData>,
+    pub synonyms: Vec<SynonymData>,
 }
 
 impl AllMddData {
@@ -222,6 +239,8 @@ impl AllMddData {
         Self {
             version: "".to_string(),
             release_date: "".to_string(),
+            remarks: None,
+            doi: None,
             data: Vec::new(),
             synonyms: Vec::new(),
         }
@@ -237,12 +256,18 @@ impl AllMddData {
         serde_json::from_reader(data).expect("Failed to deserialize")
     }
 
-    pub fn from_parser(mdd_data: Vec<SpeciesData>, synonym_data: Vec<SynonymData>) -> Self {
+    pub fn from_parser(
+        mdd_data: Vec<SpeciesData>,
+        synonym_data: Vec<SynonymData>,
+        metadata: &ReleaseMetadata,
+    ) -> Self {
         Self {
-            version: "".to_string(),
+            version: metadata.version.clone(),
+            release_date: metadata.release_date.clone(),
+            remarks: metadata.remarks.clone(),
+            doi: metadata.doi.clone(),
             data: mdd_data,
             synonyms: synonym_data,
-            release_date: "".to_string(),
         }
     }
 
@@ -256,6 +281,14 @@ impl AllMddData {
 
     pub fn set_release_date(&mut self, release_date: &str) {
         self.release_date = release_date.to_string();
+    }
+
+    pub fn set_remarks(&mut self, remarks: Option<String>) {
+        self.remarks = remarks;
+    }
+
+    pub fn set_doi(&mut self, doi: Option<String>) {
+        self.doi = doi;
     }
 
     pub fn to_json(&self) -> String {
@@ -278,5 +311,13 @@ impl AllMddData {
 
     pub fn get_release_date(&self) -> &str {
         &self.release_date
+    }
+
+    pub fn get_remarks(&self) -> Option<&str> {
+        self.remarks.as_deref()
+    }
+
+    pub fn get_doi(&self) -> Option<&str> {
+        self.doi.as_deref()
     }
 }

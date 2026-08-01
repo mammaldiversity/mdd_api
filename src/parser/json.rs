@@ -9,8 +9,8 @@ use regex::Regex;
 use crate::{
     helper::country_code::CountryRegionCode,
     mdd::{
-        ReleasedMddData, country::CountryStats, species::SpeciesData, synonyms::SynonymData,
-        usa::UsaStats,
+        ReleasedMddData, country::CountryStats, metadata::ReleaseMetadata, species::SpeciesData,
+        synonyms::SynonymData, usa::UsaStats,
     },
 };
 
@@ -39,10 +39,7 @@ pub struct JsonParser<'a> {
     pub output_path: &'a Path,
     /// Whether to write the output as plain text.
     pub plain_text: bool,
-    /// The version of the MDD data.
-    pub mdd_version: Option<String>,
-    /// The release date of the MDD data.
-    pub release_date: Option<String>,
+    pub metadata: Option<ReleaseMetadata>,
     /// The maximum number of records to parse.
     pub limit: Option<usize>,
     /// The prefix for the output file name.
@@ -57,32 +54,40 @@ impl<'a> JsonParser<'a> {
             synonym_path,
             output_path,
             plain_text: true,
-            mdd_version: None,
-            release_date: None,
+            metadata: None,
             limit: None,
             prefix: Some(DEFAULT_PREFIX),
         }
     }
 
-    /// Updates the release data of the `JsonParser`.
-    pub fn update_release_data(&mut self, date: &str, version: &str) {
-        self.release_date = Some(date.to_string());
-        self.mdd_version = Some(version.to_string());
+    /// Sets the full release metadata for the `JsonParser`.
+    pub fn set_metadata(&mut self, metadata: ReleaseMetadata) {
+        self.metadata = Some(metadata);
     }
 
-    // /// Creates a new `JsonParser` from the command-line arguments.
-    // fn from_args(args: &'a JsonArgs) -> Self {
-    //     Self {
-    //         input_path: &args.input,
-    //         synonym_path: &args.synonym,
-    //         output_path: &args.output,
-    //         plain_text: args.plain_text,
-    //         mdd_version: args.mdd_version.clone(),
-    //         release_date: args.release_date.clone(),
-    //         limit: args.limit,
-    //         prefix: args.prefix.as_deref(),
-    //     }
-    // }
+    /// Updates the release data of the `JsonParser`.
+    pub fn update_release_data(&mut self, date: &str, version: &str) {
+        let mut meta = self.metadata.clone().unwrap_or_default();
+        meta.release_date = date.to_string();
+        meta.version = version.to_string();
+        self.metadata = Some(meta);
+    }
+
+    /// Updates the release details including remarks and DOI.
+    pub fn update_release_info(
+        &mut self,
+        date: &str,
+        version: &str,
+        doi: Option<String>,
+        remarks: Option<String>,
+    ) {
+        let mut meta = self.metadata.clone().unwrap_or_default();
+        meta.release_date = date.to_string();
+        meta.version = version.to_string();
+        meta.doi = doi;
+        meta.remarks = remarks;
+        self.metadata = Some(meta);
+    }
 
     /// Parses the MDD data from the CSV file and converts it to a JSON file.
     pub fn parse_to_json(&self) {
@@ -175,12 +180,16 @@ impl<'a> JsonParser<'a> {
     }
 
     fn merge_data(&self, mdd_data: Vec<SpeciesData>, synonym_data: Vec<SynonymData>) -> String {
-        let all_data = ReleasedMddData::from_parser(
-            mdd_data,
-            synonym_data,
-            &self.get_version(),
-            &self.get_release_date(),
-        );
+        let release_meta = self.metadata.clone().unwrap_or_else(|| ReleaseMetadata {
+            name: "MDD".to_string(),
+            version: self.get_version(),
+            release_date: self.get_release_date(),
+            mdd_file: "".to_string(),
+            synonym_file: "".to_string(),
+            doi: None,
+            remarks: None,
+        });
+        let all_data = ReleasedMddData::from_parser(mdd_data, synonym_data, &release_meta);
         println!("MDD {} data parsed successfully", self.get_version());
         println!("Total MDD records: {}", all_data.data.len());
         println!(
@@ -197,25 +206,24 @@ impl<'a> JsonParser<'a> {
     /// MDD species file_stem example: MDD_v2.2_6815species.
     /// In this case, the version is 2.2.
     fn get_version(&self) -> String {
-        match &self.mdd_version {
-            Some(version) => version.clone(),
-            None => {
-                let file_stem = self
-                    .input_path
-                    .file_stem()
-                    .expect("Invalid file name")
-                    .to_str()
-                    .expect("Failed to convert OsStr to str");
-                // Use regex to capture the version number
-                let re =
-                    Regex::new(r"MDD_v(\d+\.\d+)").expect("Failed to compile MDD version regex");
-                if let Some(caps) = re.captures(file_stem) {
-                    caps.get(1)
-                        .map_or("unknown".to_string(), |m| m.as_str().to_string())
-                } else {
-                    "unknown".to_string()
-                }
+        if let Some(ref meta) = self.metadata {
+            if !meta.version.is_empty() {
+                return meta.version.clone();
             }
+        }
+        let file_stem = self
+            .input_path
+            .file_stem()
+            .expect("Invalid file name")
+            .to_str()
+            .expect("Failed to convert OsStr to str");
+        // Use regex to capture the version number
+        let re = Regex::new(r"MDD_v(\d+\.\d+)").expect("Failed to compile MDD version regex");
+        if let Some(caps) = re.captures(file_stem) {
+            caps.get(1)
+                .map_or("unknown".to_string(), |m| m.as_str().to_string())
+        } else {
+            "unknown".to_string()
         }
     }
 
@@ -223,18 +231,17 @@ impl<'a> JsonParser<'a> {
     ///
     /// We infer release date from the metadata if not specified.
     fn get_release_date(&self) -> String {
-        match &self.release_date {
-            Some(date) => date.clone(),
-            None => {
-                let file_meta =
-                    fs::metadata(self.input_path).expect("Failed to read file metadata");
-                let modified_time = file_meta
-                    .created()
-                    .expect("Failed to get file modified time");
-                let date = DateTime::<chrono::Local>::from(modified_time);
-                date.format("%B %e, %Y").to_string()
+        if let Some(ref meta) = self.metadata {
+            if !meta.release_date.is_empty() {
+                return meta.release_date.clone();
             }
         }
+        let file_meta = fs::metadata(self.input_path).expect("Failed to read file metadata");
+        let modified_time = file_meta
+            .created()
+            .expect("Failed to get file modified time");
+        let date = DateTime::<chrono::Local>::from(modified_time);
+        date.format("%B %e, %Y").to_string()
     }
 
     /// Limits the number of MDD data records.
@@ -306,5 +313,33 @@ impl<'a> JsonParser<'a> {
         fs::create_dir_all(self.output_path).unwrap_or_else(|_| {
             panic!("Failed to create output directory: {:?}", self.output_path)
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_json_parser_metadata_remarks_and_doi() {
+        let mut parser = JsonParser::from_path(
+            Path::new("tests/data/test_data.csv"),
+            Path::new("tests/data/test_synonym_data.csv"),
+            Path::new("target/tmp_test_output"),
+        );
+        let meta = ReleaseMetadata {
+            name: "MDD".to_string(),
+            version: "2026.1".to_string(),
+            release_date: "2026-08-01".to_string(),
+            mdd_file: "mdd.csv".to_string(),
+            synonym_file: "syn.csv".to_string(),
+            doi: Some("10.5281/zenodo.123456".to_string()),
+            remarks: Some("Test release remarks".to_string()),
+        };
+        parser.set_metadata(meta);
+
+        let json_str = parser.merge_data(Vec::new(), Vec::new());
+        assert!(json_str.contains(r#""doi":"10.5281/zenodo.123456""#));
+        assert!(json_str.contains(r#""remarks":"Test release remarks""#));
     }
 }
