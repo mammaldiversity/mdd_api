@@ -1,6 +1,26 @@
 //! Methods and data structure for MDD diff files.
 
+use std::fs::File;
+use std::io::BufReader;
+
 use serde::{Deserialize, Serialize};
+
+pub struct AllMddDiffs {
+    pub data: Vec<DiffData>,
+}
+
+impl AllMddDiffs {
+    pub fn from_file(file: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let file = File::open(file)?;
+        let reader = BufReader::new(file);
+        let data: Vec<DiffData> = serde_json::from_reader(reader)?;
+        Ok(Self { data })
+    }
+
+    pub fn get_diff(&self, version: &str) -> Option<&DiffData> {
+        self.data.iter().find(|d| d.version == version)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DiffData {
