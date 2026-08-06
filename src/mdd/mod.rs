@@ -16,6 +16,7 @@ use synonyms::SynonymData;
 use crate::mdd::metadata::ReleaseMetadata;
 
 pub mod country;
+pub mod diff;
 pub mod metadata;
 pub mod species;
 pub mod synonyms;
