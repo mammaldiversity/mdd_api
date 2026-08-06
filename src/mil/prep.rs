@@ -468,7 +468,7 @@ impl<'a> MilParser<'a> {
         if let Ok(entries) = glob(&format!("{}/**/*.csv", dir.display())) {
             for entry in entries.flatten() {
                 let name = entry.file_name().unwrap_or_default().to_string_lossy();
-                if !name.starts_with("MDD_v") && !name.starts_with("Species_Syn_v") {
+                if !name.starts_with("MDD_v") && !name.starts_with("Species_Syn_") {
                     return Some(entry);
                 }
             }

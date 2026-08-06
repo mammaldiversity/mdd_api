@@ -117,9 +117,7 @@ impl<'a> ZipParser<'a> {
                 .expect("Failed to get file name")
                 .to_str()
                 .expect("Failed to convert OsStr to str");
-            if file_name.starts_with("Species_Syn_v")
-                || file_name.starts_with("Species_Syn_Current_v")
-            {
+            if file_name.starts_with("Species_Syn_") {
                 return Some(file.to_path_buf());
             }
         }
