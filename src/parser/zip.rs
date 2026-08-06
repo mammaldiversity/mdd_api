@@ -5,7 +5,11 @@ use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
 use crate::mdd::species::SpeciesData;
-use crate::{cli::args::UnpackArgs, mdd::metadata::ReleaseToml, parser::json::JsonParser};
+use crate::{
+    cli::args::UnpackArgs,
+    mdd::metadata::ReleaseToml,
+    parser::{diff::DiffParser, json::JsonParser},
+};
 
 /// A parser for extracting MDD data from a zip file.
 pub struct ZipParser<'a> {
@@ -13,6 +17,12 @@ pub struct ZipParser<'a> {
     input_path: &'a Path,
     /// The path to the output directory.
     output_path: &'a Path,
+    /// An optional previous diff JSON file to merge into.
+    append_diff: Option<&'a Path>,
+    /// Whether to also write a plain-text diff JSON file.
+    plain_text: bool,
+    /// Optional command-line release date override.
+    release_date: Option<&'a str>,
 }
 
 impl<'a> ZipParser<'a> {
@@ -21,6 +31,9 @@ impl<'a> ZipParser<'a> {
         Self {
             input_path: &args.input.input,
             output_path: &args.output.output,
+            append_diff: args.append_diff.as_deref(),
+            plain_text: args.plain_text,
+            release_date: args.release_date.as_deref(),
         }
     }
 
@@ -51,6 +64,11 @@ impl<'a> ZipParser<'a> {
             println!("No release.toml file found. Using default metadata.\n");
             None
         };
+        let diff_release_date = meta
+            .as_ref()
+            .map(|metadata| metadata.metadata.release_date.clone())
+            .filter(|date| !date.is_empty())
+            .or_else(|| self.release_date.map(str::to_string));
 
         let mdd_file = self.find_mdd_file(&files);
         println!("Found MDD file: {:?}", mdd_file);
@@ -69,6 +87,38 @@ impl<'a> ZipParser<'a> {
             json_parser.set_metadata(meta.metadata);
         }
         json_parser.parse_to_json();
+        self.parse_diff(diff_release_date);
+    }
+
+    fn parse_diff(&self, release_date: Option<String>) {
+        let files = crate::parser::diff::collect_csv_files(self.output_path)
+            .expect("Failed to find CSV files in extracted archive");
+        let diff_files = files
+            .into_iter()
+            .filter(|path| {
+                DiffParser::is_taxonomy_file(path) || DiffParser::is_all_changes_file(path)
+            })
+            .collect::<Vec<PathBuf>>();
+
+        let pair = DiffParser::find_pair(&diff_files);
+        let Some((taxonomy_path, all_changes_path)) = pair else {
+            if self.append_diff.is_some() {
+                panic!(
+                    "--append-diff was provided, but no complete Diff and Diff-AllChanges pair was found"
+                );
+            }
+            println!("No complete diff pair found. Skipping diff JSON output.");
+            return;
+        };
+
+        let diff = DiffParser::parse_files(&taxonomy_path, &all_changes_path, release_date)
+            .expect("Failed to parse diff files");
+        let output = DiffParser::default_output_path(self.output_path);
+        let outputs = DiffParser::write_diff(diff, &output, self.append_diff, self.plain_text)
+            .expect("Failed to write diff JSON");
+        for output in outputs {
+            println!("Diff output written to: {:?}", output);
+        }
     }
 
     /// Extracts the contents of the zip file to the output directory.
@@ -168,6 +218,9 @@ mod tests {
         let parser = ZipParser {
             input_path: Path::new("dummy.zip"),
             output_path: Path::new("dummy_out"),
+            append_diff: None,
+            plain_text: false,
+            release_date: None,
         };
 
         let files1 = vec![PathBuf::from("/tmp/MDD/Species_Syn_v2.2.csv")];

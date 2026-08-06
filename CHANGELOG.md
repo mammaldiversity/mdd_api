@@ -5,6 +5,9 @@
 ## [0.9.0] - 2026-08-1
 
 - Added: Add remarks and doi in the output MDD release data.
+- Added: Parse release diff CSV pairs with the `diff` subcommand.
+- Added: Export and append gzip-compressed diff JSON, with optional plain-text JSON output.
+- Added: Discover and append bundled diffs during `unpack`.
 
 ## [0.8.2] - 2026-07-28
 

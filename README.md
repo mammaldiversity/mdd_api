@@ -76,6 +76,32 @@ single step.
 mdd unpack --input MDD.zip --output ./out
 ```
 
+#### Parse Release Diffs
+
+Diff releases can be parsed from the paired taxonomy and all-changes CSV files.
+The default output is gzip-compressed JSON; `--plain-text` also writes an
+uncompressed JSON copy. Existing plain or gzip JSON files can be merged by
+release version.
+
+```powershell
+mdd diff --input Diff_v2.2-v2.3.csv `
+  --all-changes Diff-AllChanges_v2.2-2.3.csv `
+  --output ./diffs.json.gz --plain-text
+
+# Append or replace a release in an existing diff collection
+mdd diff --input Diff_v2.2-v2.3.csv `
+  --all-changes Diff-AllChanges_v2.2-2.3.csv `
+  --append ./previous-diffs.json.gz --output ./diffs.json.gz
+```
+
+When the diff files are included in an MDD ZIP archive, `unpack` discovers
+them automatically and writes `diffs.json.gz`. Use `--append-diff` to merge
+with a previous diff collection.
+
+```powershell
+mdd unpack --input MDD.zip --output ./out --append-diff ./previous-diffs.json.gz
+```
+
 #### Filter by Country
 
 Use the `filter country` subcommand to extract species by country code from an MDD zip file. The country code should be provided in ISO 3166-1 alpha-2 format.

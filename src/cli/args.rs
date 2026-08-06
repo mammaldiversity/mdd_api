@@ -8,7 +8,8 @@
 //! * `json`  – Parse species + synonym CSVs and export JSON (optionally limit or prefix files).
 //! * `db`    – (Planned/placeholder) ingest JSON into a SQLite database.
 //! * `toml`  – Parse release metadata TOML plus referenced CSVs (future expansion).
-//! * `zip`   – Parse directly from a zipped archive (future/support tooling).
+//! * `diff`  – Parse paired release diff CSVs and export JSON.
+//! * `unpack` – Parse directly from a zipped archive.
 //!
 //! Most file path arguments default to relative names to simplify quick starts;
 //! override them for production workflows.
@@ -25,6 +26,8 @@ pub use crate::helper::types::OutputFormat;
 pub enum Cli {
     #[command(name = "unpack", about = "Parse MDD data and export different formats")]
     Unpack(UnpackArgs),
+    #[command(name = "diff", about = "Parse MDD release diffs and export JSON")]
+    Diff(DiffArgs),
     #[command(
         subcommand,
         name = "filter",
@@ -71,8 +74,42 @@ pub struct UnpackArgs {
     /// Override MDD release date (ISO 8601 expected: YYYY-MM-DD).
     #[arg(long = "date", help = "MDD release date")]
     pub release_date: Option<String>,
+    /// Append the archive diff to a previous JSON or gzip JSON file.
+    #[arg(long = "append-diff", help = "Previous diff JSON file to append to")]
+    pub append_diff: Option<PathBuf>,
+    /// Also write an uncompressed diff JSON file.
+    #[arg(long, help = "Also write plain-text diff JSON")]
+    pub plain_text: bool,
     #[command(flatten)]
     pub output: CommonOutput,
+}
+
+/// Arguments for the `diff` subcommand.
+#[derive(Args)]
+pub struct DiffArgs {
+    /// Taxonomy-change diff CSV, named like Diff_v2.2-v2.3.csv.
+    #[arg(long, short, help = "Taxonomy-change diff CSV")]
+    pub input: PathBuf,
+    /// All-changes diff CSV, named like Diff-AllChanges_v2.2-2.3.csv.
+    #[arg(long = "all-changes", short = 'a', help = "All-changes diff CSV")]
+    pub all_changes: PathBuf,
+    /// Output JSON path or basename; gzip JSON is written by default.
+    #[arg(
+        long,
+        short,
+        default_value = "diffs.json.gz",
+        help = "Output diff JSON path"
+    )]
+    pub output: PathBuf,
+    /// Existing plain or gzip JSON diff file to merge into.
+    #[arg(long, help = "Previous diff JSON file")]
+    pub append: Option<PathBuf>,
+    /// Optional release date (ISO 8601 expected: YYYY-MM-DD).
+    #[arg(long = "date", help = "Diff release date")]
+    pub release_date: Option<String>,
+    /// Also write an uncompressed JSON file alongside the gzip output.
+    #[arg(long, help = "Also write plain-text JSON")]
+    pub plain_text: bool,
 }
 
 #[derive(Args)]
