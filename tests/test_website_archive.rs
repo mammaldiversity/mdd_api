@@ -269,6 +269,10 @@ fn unpack_handles_current_website_archive_layout() {
     assert_eq!(diffs.data[0].prev_version, "2.4");
     assert_eq!(diffs.data[0].version, "2.5");
     assert_eq!(diffs.data[0].release_date.as_deref(), Some("2026-07-28"));
+    assert_eq!(
+        diffs.data[0].release_notes.as_deref(),
+        Some("This is an incremental release with 6,904 total species.")
+    );
 }
 
 #[test]

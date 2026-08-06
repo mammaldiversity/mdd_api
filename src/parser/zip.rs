@@ -69,6 +69,13 @@ impl<'a> ZipParser<'a> {
             .map(|metadata| metadata.metadata.release_date.clone())
             .filter(|date| !date.is_empty())
             .or_else(|| self.release_date.map(str::to_string));
+        let diff_release_notes = meta.as_ref().and_then(|metadata| {
+            metadata
+                .metadata
+                .remarks
+                .clone()
+                .filter(|remarks| !remarks.trim().is_empty())
+        });
 
         let mdd_file = self.find_mdd_file(&files);
         println!("Found MDD file: {:?}", mdd_file);
@@ -87,10 +94,10 @@ impl<'a> ZipParser<'a> {
             json_parser.set_metadata(meta.metadata);
         }
         json_parser.parse_to_json();
-        self.parse_diff(diff_release_date);
+        self.parse_diff(diff_release_date, diff_release_notes);
     }
 
-    fn parse_diff(&self, release_date: Option<String>) {
+    fn parse_diff(&self, release_date: Option<String>, release_notes: Option<String>) {
         let files = crate::parser::diff::collect_csv_files(self.output_path)
             .expect("Failed to find CSV files in extracted archive");
         let diff_files = files
@@ -111,8 +118,13 @@ impl<'a> ZipParser<'a> {
             return;
         };
 
-        let diff = DiffParser::parse_files(&taxonomy_path, &all_changes_path, release_date)
-            .expect("Failed to parse diff files");
+        let diff = DiffParser::parse_files_with_notes(
+            &taxonomy_path,
+            &all_changes_path,
+            release_date,
+            release_notes,
+        )
+        .expect("Failed to parse diff files");
         let output = DiffParser::default_output_path(self.output_path);
         let outputs = DiffParser::write_diff(diff, &output, self.append_diff, self.plain_text)
             .expect("Failed to write diff JSON");

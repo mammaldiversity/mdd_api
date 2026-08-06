@@ -18,6 +18,15 @@ impl DiffParser {
         all_changes_path: &Path,
         release_date: Option<String>,
     ) -> Result<DiffData, Box<dyn Error>> {
+        Self::parse_files_with_notes(taxonomy_path, all_changes_path, release_date, None)
+    }
+
+    pub fn parse_files_with_notes(
+        taxonomy_path: &Path,
+        all_changes_path: &Path,
+        release_date: Option<String>,
+        release_notes: Option<String>,
+    ) -> Result<DiffData, Box<dyn Error>> {
         let (prev_version, version) = Self::parse_version_pair(taxonomy_path)?;
         let all_versions = Self::parse_version_pair(all_changes_path)?;
         if (prev_version.clone(), version.clone()) != all_versions {
@@ -35,6 +44,7 @@ impl DiffParser {
             taxonomy_changes: Self::parse_taxonomy_changes(taxonomy_path)?,
             all_changes: Self::parse_all_changes(all_changes_path)?,
             release_date,
+            release_notes,
         })
     }
 

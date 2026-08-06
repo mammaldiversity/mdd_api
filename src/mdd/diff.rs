@@ -77,6 +77,8 @@ pub struct DiffData {
     pub all_changes: Vec<DiffAllChanges>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release_notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

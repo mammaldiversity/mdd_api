@@ -62,6 +62,7 @@ fn parses_diff_samples_and_writes_gzip_and_plain_json() {
     let loaded = AllMddDiffs::from_path(&temp.path().join("diffs.json.gz")).unwrap();
     assert_eq!(loaded.data.len(), 1);
     assert_eq!(loaded.data[0].release_date.as_deref(), Some("2026-08-06"));
+    assert!(loaded.data[0].release_notes.is_none());
     assert_eq!(loaded.data[0].taxonomy_changes[0].catagory, "de novo");
 }
 
@@ -145,4 +146,8 @@ fn unpack_exports_archive_diff_and_reads_release_date() {
     assert_eq!(diffs.data.len(), 1);
     assert_eq!(diffs.data[0].version, "2.3");
     assert_eq!(diffs.data[0].release_date.as_deref(), Some("2024-06-01"));
+    assert_eq!(
+        diffs.data[0].release_notes.as_deref(),
+        Some("This is a sample release. (optional)")
+    );
 }
