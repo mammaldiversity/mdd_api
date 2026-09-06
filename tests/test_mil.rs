@@ -5,7 +5,6 @@ use std::process::Command;
 
 use flate2::write::GzEncoder;
 use tar::Builder;
-use tempdir::TempDir;
 use zip::ZipWriter;
 use zip::write::FileOptions;
 
@@ -110,7 +109,10 @@ fn create_mock_mil_tar_gz(path: &Path) {
 
 #[test]
 fn test_cli_mil_subcommand() {
-    let tmp = TempDir::new("test_cli_mil").unwrap();
+    let tmp = tempfile::Builder::new()
+        .prefix("test_cli_mil")
+        .tempdir()
+        .unwrap();
 
     // Create MIL metadata file
     let mil_path = tmp.path().join("mil.csv");
@@ -167,7 +169,10 @@ fn test_cli_mil_subcommand() {
 
 #[test]
 fn test_cli_prepare_subcommand_compressed() {
-    let tmp = TempDir::new("test_cli_prepare").unwrap();
+    let tmp = tempfile::Builder::new()
+        .prefix("test_cli_prepare")
+        .tempdir()
+        .unwrap();
 
     // Create mock MDD zip file
     let mdd_zip_path = tmp.path().join("MDD.zip");

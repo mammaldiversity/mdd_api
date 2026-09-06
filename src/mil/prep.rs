@@ -15,7 +15,6 @@ use glob::glob;
 use imagesize;
 use serde::{Deserialize, Serialize};
 use tar::Archive;
-use tempdir::TempDir;
 use zip::ZipArchive;
 
 /// A record containing merged MIL and MDD data.
@@ -74,7 +73,7 @@ impl<'a> MilParser<'a> {
     /// Core function to prepare MIL metadata, matching species against MDD records, probing orientations,
     /// handling compressed inputs, and writing the final JSON.
     pub fn prepare_metadata(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let temp_holder = TempDir::new("mil_prep")?;
+        let temp_holder = tempfile::Builder::new().prefix("mil_prep").tempdir()?;
         let (active_mil_file, active_img_dir) = self.resolve_input_paths(temp_holder.path())?;
 
         println!("Loading MIL metadata from: {:?}", active_mil_file);
@@ -515,7 +514,6 @@ impl<'a> MilParser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempdir::TempDir;
 
     #[test]
     fn test_to_camel() {
@@ -539,7 +537,10 @@ mod tests {
 
     #[test]
     fn test_orientation_parsing() {
-        let tmp = TempDir::new("test_images").unwrap();
+        let tmp = tempfile::Builder::new()
+            .prefix("test_images")
+            .tempdir()
+            .unwrap();
 
         // Create 2x1 landscape PNG
         let landscape_png = [
@@ -581,7 +582,10 @@ mod tests {
 
     #[test]
     fn test_prepare_metadata() {
-        let tmp = TempDir::new("test_prep").unwrap();
+        let tmp = tempfile::Builder::new()
+            .prefix("test_prep")
+            .tempdir()
+            .unwrap();
 
         // 1. Create MIL CSV
         let mil_csv = "Order,Family,Common Name of Family,Genus,Specific Epithet,Common name of Species,Distribution of Species,MIL #,Description of Image,Date Image Taken,Photographer,Location Where Image Taken,Original File Name\n\

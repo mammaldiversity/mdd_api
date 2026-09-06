@@ -223,14 +223,12 @@ impl<'a> MddWriter<'a> {
 mod test {
     use std::env;
 
-    use tempdir::TempDir;
-
     use super::*;
 
     #[test]
     fn test_write_json() {
         let json_mdd: &str = r#"[{"id":1,"phylosort":1,"subclass":"Theria"}]"#;
-        let output_dir = TempDir::new("output").unwrap();
+        let output_dir = tempfile::Builder::new().prefix("output").tempdir().unwrap();
         let output_dir = env::current_dir().unwrap().join(output_dir.path());
         let filename = "output";
         let parser = AllMddWriter::new(&output_dir, filename, false);
@@ -242,7 +240,7 @@ mod test {
     // #[test]
     // fn test_write_csv() {
     //     let input_path = Path::new("../assets/data/data.json.gz");
-    //     let output_dir = TempDir::new("output").unwrap();
+    //     let output_dir = tempfile::Builder::new().prefix("output").tempdir().unwrap();
     //     let output_dir = env::current_dir().unwrap().join(output_dir.path());
     //     let filename = "output";
     //     let parser = AllMddWriter::new(&output_dir, filename, true);
@@ -251,7 +249,7 @@ mod test {
 
     #[test]
     fn check_filename() {
-        let output_dir = TempDir::new("output").unwrap();
+        let output_dir = tempfile::Builder::new().prefix("output").tempdir().unwrap();
         let output_dir = env::current_dir().unwrap().join(output_dir.path());
         let filename = "output";
         let parser = AllMddWriter::new(&output_dir, filename, false);

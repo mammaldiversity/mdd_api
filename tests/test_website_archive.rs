@@ -7,7 +7,6 @@ use flate2::write::GzEncoder;
 use mdd_api::mdd::{ReleasedMddData, diff::AllMddDiffs};
 use mdd_api::mil::prep::MilMetadata;
 use tar::Builder;
-use tempdir::TempDir;
 use zip::ZipWriter;
 use zip::write::FileOptions;
 
@@ -220,7 +219,10 @@ fn create_website_mil_tar_gz(path: &Path) {
 
 #[test]
 fn unpack_handles_current_website_archive_layout() {
-    let temp = TempDir::new("website_mdd_unpack").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("website_mdd_unpack")
+        .tempdir()
+        .unwrap();
     let archive = temp.path().join("MDD.zip");
     let output = temp.path().join("out");
     create_website_mdd_zip(&archive);
@@ -277,7 +279,10 @@ fn unpack_handles_current_website_archive_layout() {
 
 #[test]
 fn prepare_handles_current_website_archive_and_mil_release() {
-    let temp = TempDir::new("website_mdd_prepare").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("website_mdd_prepare")
+        .tempdir()
+        .unwrap();
     let archive = temp.path().join("MDD.zip");
     let mil_archive = temp.path().join("mil-v2026-07-28.tar.gz");
     let output = temp.path().join("out");

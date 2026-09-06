@@ -1,6 +1,6 @@
 [package]
 name = "mdd_api"
-version = "0.10.0"
+version = "0.10.1"
 edition = "2024"
 repository = "https://github.com/mammaldiversity/mdd_app"
 authors = ["Heru Handika <herubiolog@gmail.com>"]
@@ -22,7 +22,7 @@ lazy_static = "1.5.0"
 regex = "1.11.1"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
-tempdir = "0.3.7"
+tempfile = "3.23.0"
 toml = "0.9.5"
 zip = "5.*"
 calamine = "0.26.1"

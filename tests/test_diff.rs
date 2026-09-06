@@ -4,7 +4,6 @@ use std::process::Command;
 
 use mdd_api::mdd::diff::AllMddDiffs;
 use mdd_api::parser::diff::DiffParser;
-use tempdir::TempDir;
 use zip::ZipWriter;
 use zip::write::FileOptions;
 
@@ -35,7 +34,10 @@ fn create_diff_zip(path: &std::path::Path) {
 
 #[test]
 fn parses_diff_samples_and_writes_gzip_and_plain_json() {
-    let temp = TempDir::new("diff_parser").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("diff_parser")
+        .tempdir()
+        .unwrap();
     let diff = DiffParser::parse_files(
         std::path::Path::new("data/Diff_v2.2-v2.3.csv"),
         std::path::Path::new("data/Diff-AllChanges_v2.2-2.3.csv"),
@@ -68,7 +70,10 @@ fn parses_diff_samples_and_writes_gzip_and_plain_json() {
 
 #[test]
 fn diff_cli_defaults_to_gzip_output() {
-    let temp = TempDir::new("diff_cli").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("diff_cli")
+        .tempdir()
+        .unwrap();
     let output = temp.path().join("release-diffs");
     let status = Command::new(env!("CARGO_BIN_EXE_mdd"))
         .args([
@@ -88,7 +93,10 @@ fn diff_cli_defaults_to_gzip_output() {
 
 #[test]
 fn appends_gzip_diffs_and_replaces_matching_version() {
-    let temp = TempDir::new("diff_append").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("diff_append")
+        .tempdir()
+        .unwrap();
     let first = DiffParser::parse_files(
         std::path::Path::new("data/Diff_v2.0-v2.1.csv"),
         std::path::Path::new("data/Diff-AllChanges_v2.0-v2.1.csv"),
@@ -125,7 +133,10 @@ fn appends_gzip_diffs_and_replaces_matching_version() {
 
 #[test]
 fn unpack_exports_archive_diff_and_reads_release_date() {
-    let temp = TempDir::new("diff_unpack").unwrap();
+    let temp = tempfile::Builder::new()
+        .prefix("diff_unpack")
+        .tempdir()
+        .unwrap();
     let archive = temp.path().join("MDD.zip");
     let output = temp.path().join("out");
     create_diff_zip(&archive);
