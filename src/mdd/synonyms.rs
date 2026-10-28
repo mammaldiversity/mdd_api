@@ -33,7 +33,10 @@ pub struct SynonymData {
     root_name: String,
     author: String,
     year: String,
-    authority_parentheses: u8,
+    /// 1 when the authority is cited in parentheses, 0 when not, and `None`
+    /// when unknown (the CSV marks a few rows with "?").
+    #[serde(default, deserialize_with = "deserialize_parentheses")]
+    authority_parentheses: Option<u8>,
     nomenclature_status: String,
     validity: String,
     original_combination: String,
@@ -82,7 +85,7 @@ impl SynonymData {
             root_name: "".to_string(),
             author: "".to_string(),
             year: "".to_string(),
-            authority_parentheses: 0,
+            authority_parentheses: None,
             nomenclature_status: "".to_string(),
             validity: "".to_string(),
             original_combination: "".to_string(),
@@ -125,9 +128,13 @@ impl SynonymData {
         let data = self.clean_colnames(csv_data);
         let mut rdr = csv::Reader::from_reader(data.as_slice());
         let mut records = Vec::new();
-        for result in rdr.deserialize() {
-            let record: Self = result.unwrap_or_default();
-            records.push(record);
+        for (index, result) in rdr.deserialize().enumerate() {
+            match result {
+                Ok(record) => records.push(record),
+                // Skip rather than keep an empty default record, which would
+                // look like a real synonym with no data.
+                Err(err) => eprintln!("Skipping synonym CSV record {}: {}", index + 1, err),
+            }
         }
         records
     }
@@ -160,6 +167,27 @@ impl SynonymData {
     }
 }
 
+/// Reads the authority-parentheses flag from CSV text ("0", "1", "?") or
+/// from JSON (a number or null). Values other than a number become `None`
+/// instead of failing the whole record.
+fn deserialize_parentheses<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Flag {
+        Number(u8),
+        Text(String),
+    }
+
+    Ok(match Option::<Flag>::deserialize(deserializer)? {
+        Some(Flag::Number(value)) => Some(value),
+        Some(Flag::Text(text)) => text.trim().parse().ok(),
+        None => None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,6 +201,84 @@ mod tests {
             output,
             b"synId,hespId,speciesId,species,rootName,author,year\n".to_vec()
         );
+    }
+
+    /// The column header of the MDD v2.5 synonym CSV.
+    const HEADER: &str = "MDD_syn_ID,MDD_species,MDD_root_name,MDD_author,MDD_year,MDD_authority_parentheses,MDD_nomenclature_status,MDD_validity,MDD_original_combination,MDD_normalized_original_combination,MDD_original_rank,MDD_authority_citation,MDD_unchecked_authority_citation,MDD_sourced_unverified_citations,MDD_citation_group,MDD_citation_kind,MDD_authority_page,MDD_authority_link,MDD_authority_page_link,MDD_unchecked_authority_page_link,MDD_old_type_locality,MDD_original_type_locality,MDD_unchecked_type_locality,MDD_emended_type_locality,MDD_type_latitude,MDD_type_longitude,MDD_type_country,MDD_type_subregion,MDD_type_subregion2,MDD_holotype,MDD_type_kind,MDD_type_specimen_link,MDD_order,MDD_family,MDD_genus,MDD_specificEpithet,MDD_subspecificEpithet,MDD_variant_of,MDD_senior_homonym,MDD_variant_name_citations,Hesp_id,MDD_species_id,MDD_name_usages,MDD_comments";
+
+    /// A CSV with [HEADER] and one row per entry, filling columns not given
+    /// with empty values.
+    fn csv(rows: &[&[(&str, &str)]]) -> String {
+        let columns: Vec<&str> = HEADER.split(',').collect();
+        let mut csv = format!("{HEADER}\n");
+        for row in rows {
+            let values: Vec<&str> = columns
+                .iter()
+                .map(|col| {
+                    row.iter()
+                        .find(|(name, _)| name == col)
+                        .map_or("", |(_, value)| value)
+                })
+                .collect();
+            csv.push_str(&values.join(","));
+            csv.push('\n');
+        }
+        csv
+    }
+
+    const PLATYPUS: &[(&str, &str)] = &[
+        ("MDD_syn_ID", "100014411"),
+        ("Hesp_id", "1"),
+        ("MDD_species_id", "1000001"),
+        ("MDD_root_name", "anatinus"),
+        ("MDD_authority_parentheses", "0"),
+    ];
+
+    #[test]
+    fn test_unknown_authority_parentheses_keeps_record() {
+        let records = SynonymData::new().from_csv(&csv(&[
+            &[
+                ("MDD_syn_ID", "100056884"),
+                ("Hesp_id", "55"),
+                ("MDD_species_id", "1003013"),
+                ("MDD_root_name", "kurdistanicus"),
+                ("MDD_authority_parentheses", "?"),
+            ],
+            PLATYPUS,
+        ]));
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].syn_id, 100056884);
+        assert_eq!(records[0].species_id, Some(1003013));
+        assert_eq!(records[0].root_name, "kurdistanicus");
+        assert_eq!(records[0].authority_parentheses, None);
+        assert_eq!(records[1].authority_parentheses, Some(0));
+    }
+
+    #[test]
+    fn test_malformed_record_is_skipped() {
+        let records = SynonymData::new().from_csv(&csv(&[
+            &[("MDD_syn_ID", "not_a_number"), ("Hesp_id", "55")],
+            PLATYPUS,
+        ]));
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].syn_id, 100014411);
+    }
+
+    #[test]
+    fn test_authority_parentheses_json_round_trip() {
+        let mut record = SynonymData::new();
+        record.syn_id = 1;
+        let json = record.to_json();
+        assert!(json.contains("\"authorityParentheses\":null"));
+        let back: SynonymData = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.authority_parentheses, None);
+
+        let numeric = json.replace(
+            "\"authorityParentheses\":null",
+            "\"authorityParentheses\":1",
+        );
+        let back: SynonymData = serde_json::from_str(&numeric).unwrap();
+        assert_eq!(back.authority_parentheses, Some(1));
     }
 
     #[test]
